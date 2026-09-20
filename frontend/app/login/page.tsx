@@ -1,13 +1,13 @@
-tsx
+
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  function handleLogin(event: React.FormEvent<HTMLFormElement>) {
+  function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     alert(`Email: ${email}\nPassword: ${password}`);
