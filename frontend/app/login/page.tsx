@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -19,12 +18,6 @@ export default function LoginPage() {
 
   const cardRef = useRef<HTMLFormElement>(null);
 
-  /*
-  =====================================================
-  SCROLL DETECTION
-  =====================================================
-  */
-
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 18);
@@ -41,12 +34,6 @@ export default function LoginPage() {
     };
   }, []);
 
-  /*
-  =====================================================
-  FLUID GLASS CARD
-  =====================================================
-  */
-
   useEffect(() => {
     const card = cardRef.current;
 
@@ -61,12 +48,11 @@ export default function LoginPage() {
       const y =
         ((event.clientY - rect.top) / rect.height) * 100;
 
+      const rotateX = ((y - 50) / 50) * -1.4;
+      const rotateY = ((x - 50) / 50) * 1.4;
+
       card.style.setProperty("--mx", `${x}%`);
       card.style.setProperty("--my", `${y}%`);
-
-      const rotateX = ((y - 50) / 50) * -1.2;
-      const rotateY = ((x - 50) / 50) * 1.2;
-
       card.style.setProperty("--rx", `${rotateX}deg`);
       card.style.setProperty("--ry", `${rotateY}deg`);
     };
@@ -78,46 +64,21 @@ export default function LoginPage() {
       card.style.setProperty("--ry", "0deg");
     };
 
-    card.addEventListener(
-      "pointermove",
-      handlePointerMove
-    );
-
-    card.addEventListener(
-      "pointerleave",
-      handlePointerLeave
-    );
+    card.addEventListener("pointermove", handlePointerMove);
+    card.addEventListener("pointerleave", handlePointerLeave);
 
     return () => {
-      card.removeEventListener(
-        "pointermove",
-        handlePointerMove
-      );
-
-      card.removeEventListener(
-        "pointerleave",
-        handlePointerLeave
-      );
+      card.removeEventListener("pointermove", handlePointerMove);
+      card.removeEventListener("pointerleave", handlePointerLeave);
     };
   }, []);
 
-  /*
-  =====================================================
-  LOGIN
-  =====================================================
-  */
-
-  function handleLogin(
-    event: FormEvent<HTMLFormElement>
-  ) {
+  function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     setError("");
 
     if (!email.trim() || !password.trim()) {
-      setError(
-        "Please enter your email and password."
-      );
+      setError("Please enter your email and password.");
       return;
     }
 
@@ -145,74 +106,115 @@ export default function LoginPage() {
           scroll-behavior: smooth;
         }
 
-        html,
         body {
           margin: 0;
-          min-height: 100%;
-        }
 
-        body {
-          background: #01040b;
-        }
-
-        /*
-        =====================================================
-        PAGE
-        =====================================================
-        */
-
-        .ios-page {
-          --mx: 50%;
-          --my: 50%;
-          --rx: 0deg;
-          --ry: 0deg;
-
-          min-height: 125vh;
-          width: 100%;
-
-          position: relative;
-          overflow: hidden;
-
-          background:
-            radial-gradient(
-              700px circle at 12% 5%,
-              rgba(7, 42, 92, 0.25),
-              transparent 62%
-            ),
-            radial-gradient(
-              650px circle at 90% 92%,
-              rgba(20, 29, 105, 0.18),
-              transparent 63%
-            ),
-            radial-gradient(
-              450px circle at 50% 45%,
-              rgba(3, 27, 59, 0.11),
-              transparent 70%
-            ),
-            linear-gradient(
-              145deg,
-              #01030a 0%,
-              #010713 42%,
-              #01040b 100%
-            );
+          color: #263114;
 
           font-family:
             -apple-system,
             BlinkMacSystemFont,
             "SF Pro Display",
             "SF Pro Text",
-            "Helvetica Neue",
-            Arial,
+            "Segoe UI",
             sans-serif;
 
-          color: #f5f8fc;
+          background: #dfe9b0;
         }
 
-        /*
-        =====================================================
-        AMBIENT NAVY LIGHT
-        =====================================================
-        */
+        button,
+        input {
+          font: inherit;
+        }
+
+        /* =====================================================
+           PAGE
+        ===================================================== */
+
+        .ios-page {
+          position: relative;
+
+          min-height: 100vh;
+
+          overflow: hidden;
+
+          isolation: isolate;
+
+          background:
+            radial-gradient(
+              650px circle at 5% 8%,
+              rgba(193, 218, 70, 0.48),
+              transparent 68%
+            ),
+            radial-gradient(
+              650px circle at 95% 15%,
+              rgba(235, 242, 155, 0.68),
+              transparent 67%
+            ),
+            radial-gradient(
+              700px circle at 82% 105%,
+              rgba(179, 205, 67, 0.38),
+              transparent 68%
+            ),
+            radial-gradient(
+              560px circle at 18% 90%,
+              rgba(249, 251, 216, 0.78),
+              transparent 68%
+            ),
+            linear-gradient(
+              135deg,
+              #d9e5a2 0%,
+              #edf3cb 45%,
+              #d8e5a0 100%
+            );
+        }
+
+        .ios-page::before {
+          content: "";
+
+          position: absolute;
+          inset: 0;
+
+          pointer-events: none;
+
+          background:
+            linear-gradient(
+              115deg,
+              rgba(255,255,255,0.34),
+              transparent 22%,
+              transparent 68%,
+              rgba(255,255,255,0.18)
+            );
+
+          z-index: -3;
+        }
+
+        .ios-page::after {
+          content: "";
+
+          position: absolute;
+          inset: 0;
+
+          pointer-events: none;
+
+          opacity: 0.12;
+
+          background-image:
+            radial-gradient(
+              rgba(255,255,255,0.9) 0.6px,
+              transparent 0.7px
+            );
+
+          background-size: 5px 5px;
+
+          mix-blend-mode: soft-light;
+
+          z-index: -2;
+        }
+
+        /* =====================================================
+           AMBIENT LIGHT
+        ===================================================== */
 
         .ambient {
           position: absolute;
@@ -221,336 +223,192 @@ export default function LoginPage() {
 
           pointer-events: none;
 
-          filter: blur(78px);
+          z-index: -1;
 
-          opacity: 0.34;
-
-          animation:
-            ambientFloat 16s
-            ease-in-out
-            infinite;
+          filter: blur(2px);
         }
 
         .ambient-one {
-          width: 360px;
-          height: 360px;
+          width: 460px;
+          height: 460px;
 
-          left: -160px;
-          top: -130px;
+          left: -170px;
+          top: 8%;
 
           background:
-            rgba(7, 54, 118, 0.34);
+            radial-gradient(
+              circle at 35% 35%,
+              rgba(196, 221, 74, 0.62),
+              rgba(182, 207, 63, 0.25) 42%,
+              transparent 72%
+            );
+
+          box-shadow:
+            inset -35px -35px 90px
+            rgba(255,255,255,0.22);
         }
 
         .ambient-two {
-          width: 430px;
-          height: 430px;
+          width: 520px;
+          height: 520px;
 
           right: -190px;
-          bottom: -190px;
+          top: 16%;
 
           background:
-            rgba(25, 31, 120, 0.25);
-
-          animation-delay: -6s;
+            radial-gradient(
+              circle at 35% 30%,
+              rgba(246, 249, 192, 0.86),
+              rgba(206, 225, 107, 0.30) 46%,
+              transparent 73%
+            );
         }
 
         .ambient-three {
-          width: 230px;
-          height: 230px;
+          width: 410px;
+          height: 410px;
 
-          right: 18%;
-          top: 12%;
+          left: 33%;
+          bottom: -190px;
 
           background:
-            rgba(7, 80, 145, 0.10);
-
-          animation-delay: -10s;
+            radial-gradient(
+              circle,
+              rgba(171, 198, 57, 0.32),
+              rgba(220, 233, 137, 0.15) 48%,
+              transparent 72%
+            );
         }
 
-        @keyframes ambientFloat {
-          0%,
-          100% {
-            transform:
-              translate3d(0, 0, 0);
-          }
-
-          50% {
-            transform:
-              translate3d(18px, -15px, 0);
-          }
-        }
-
-        /*
-        =====================================================
-        IOS LIQUID GLASS HEADER
-        =====================================================
-        */
+        /* =====================================================
+           GLASS HEADER
+        ===================================================== */
 
         .ios-header {
           position: fixed;
 
-          top: 14px;
+          top: 18px;
           left: 50%;
 
-          transform:
-            translateX(-50%)
-            translateY(0);
+          transform: translateX(-50%);
 
-          width:
-            min(
-              calc(100% - 32px),
-              1050px
-            );
-
-          height: 58px;
-
-          z-index: 100;
+          width: min(920px, calc(100% - 32px));
+          height: 64px;
 
           display: flex;
           align-items: center;
           justify-content: space-between;
 
-          padding: 0 17px;
+          padding: 0 18px;
 
-          border-radius: 21px;
+          border-radius: 24px;
 
           background:
             linear-gradient(
               135deg,
-              rgba(14, 35, 65, 0.34),
-              rgba(2, 13, 29, 0.22)
+              rgba(255,255,255,0.16),
+              rgba(255,255,255,0.035) 42%,
+              rgba(225,238,165,0.07)
             );
 
           border:
-            1px solid
-            rgba(125, 174, 220, 0.10);
+            1px solid rgba(255,255,255,0.72);
 
           backdrop-filter:
-            blur(34px)
-            saturate(175%)
-            brightness(105%);
+            blur(45px)
+            saturate(220%)
+            brightness(116%);
 
           -webkit-backdrop-filter:
-            blur(34px)
-            saturate(175%)
-            brightness(105%);
+            blur(45px)
+            saturate(220%)
+            brightness(116%);
 
           box-shadow:
-            0 8px 32px
-              rgba(0, 0, 0, 0.22),
-
-            0 2px 10px
-              rgba(0, 22, 52, 0.18),
-
-            inset 0 1px 1px
-              rgba(150, 200, 240, 0.11),
-
-            inset 0 -1px 1px
-              rgba(0, 0, 0, 0.16);
-
-          transition:
-            background 500ms
-              cubic-bezier(.2,.8,.2,1),
-
-            backdrop-filter 500ms
-              cubic-bezier(.2,.8,.2,1),
-
-            -webkit-backdrop-filter 500ms
-              cubic-bezier(.2,.8,.2,1),
-
-            border-color 500ms ease,
-
-            box-shadow 500ms ease,
-
-            transform 500ms
-              cubic-bezier(.2,.8,.2,1),
-
-            height 500ms
-              cubic-bezier(.2,.8,.2,1);
+            0 25px 65px rgba(63,77,17,0.14),
+            0 8px 25px rgba(70,85,19,0.07),
+            inset 0 1px 1px rgba(255,255,255,0.90),
+            inset 0 -1px 1px rgba(74,89,20,0.04);
 
           overflow: hidden;
 
-          isolation: isolate;
-        }
+          z-index: 20;
 
-        /*
-        Moving liquid refraction.
-        */
+          transition:
+            top 0.3s ease,
+            height 0.3s ease,
+            box-shadow 0.3s ease;
+        }
 
         .ios-header::before {
           content: "";
 
           position: absolute;
-
-          inset: -80px;
-
-          border-radius: inherit;
+          inset: 0;
 
           pointer-events: none;
 
           background:
-            radial-gradient(
-              260px circle at 15% 0%,
-              rgba(48, 126, 202, 0.17),
-              transparent 68%
+            linear-gradient(
+              120deg,
+              rgba(255,255,255,0.42),
+              transparent 24%,
+              transparent 66%,
+              rgba(255,255,255,0.10)
             ),
-
             radial-gradient(
-              300px circle at 85% 100%,
-              rgba(45, 65, 170, 0.12),
-              transparent 70%
+              ellipse at 50% -100%,
+              rgba(255,255,255,0.52),
+              transparent 65%
             );
 
-          opacity: 0.65;
-
-          transform:
-            translate3d(0, 0, 0);
-
-          transition:
-            opacity 500ms ease,
-            transform 700ms
-              cubic-bezier(.2,.8,.2,1);
+          opacity: 0.75;
         }
-
-        /*
-        Moving glass reflection.
-        */
 
         .ios-header::after {
           content: "";
 
           position: absolute;
 
-          top: -100%;
-          left: -45%;
+          left: 8%;
+          right: 8%;
+          top: 0;
 
-          width: 42%;
-          height: 300%;
-
-          pointer-events: none;
+          height: 1px;
 
           background:
             linear-gradient(
               90deg,
               transparent,
-              rgba(135, 190, 235, 0.08),
-              rgba(190, 220, 245, 0.12),
+              rgba(255,255,255,0.95),
               transparent
             );
 
-          transform:
-            skewX(-18deg)
-            translateX(0);
-
-          opacity: 0;
-
-          transition:
-            opacity 500ms ease;
+          opacity: 0.75;
         }
-
-        /*
-        =====================================================
-        SCROLLED HEADER
-        =====================================================
-        */
 
         .ios-header.scrolled {
           top: 10px;
-
-          height: 55px;
-
-          transform:
-            translateX(-50%)
-            translateY(0);
+          height: 58px;
 
           background:
             linear-gradient(
               135deg,
-              rgba(16, 42, 76, 0.48),
-              rgba(3, 17, 36, 0.38)
+              rgba(255,255,255,0.20),
+              rgba(255,255,255,0.045),
+              rgba(225,238,165,0.08)
             );
 
-          border:
-            1px solid
-            rgba(132, 187, 232, 0.19);
-
-          backdrop-filter:
-            blur(42px)
-            saturate(190%)
-            brightness(108%);
-
-          -webkit-backdrop-filter:
-            blur(42px)
-            saturate(190%)
-            brightness(108%);
-
           box-shadow:
-            0 18px 48px
-              rgba(0, 0, 0, 0.38),
-
-            0 5px 20px
-              rgba(0, 28, 65, 0.28),
-
-            inset 0 1px 1px
-              rgba(180, 220, 250, 0.18),
-
-            inset 0 -1px 1px
-              rgba(0, 0, 0, 0.20);
+            0 26px 70px rgba(63,77,17,0.17),
+            inset 0 1px 1px rgba(255,255,255,0.94);
         }
-
-        .ios-header.scrolled::before {
-          opacity: 1;
-
-          transform:
-            translate3d(
-              8px,
-              -4px,
-              0
-            )
-            scale(1.05);
-        }
-
-        .ios-header.scrolled::after {
-          opacity: 1;
-
-          animation:
-            glassReflection 5s
-            ease-in-out
-            infinite;
-        }
-
-        @keyframes glassReflection {
-          0% {
-            transform:
-              skewX(-18deg)
-              translateX(-20%);
-          }
-
-          50% {
-            transform:
-              skewX(-18deg)
-              translateX(240%);
-          }
-
-          100% {
-            transform:
-              skewX(-18deg)
-              translateX(240%);
-          }
-        }
-
-        /*
-        =====================================================
-        HEADER CONTENT
-        =====================================================
-        */
 
         .header-brand,
         .header-status {
           position: relative;
 
-          z-index: 5;
+          z-index: 2;
         }
 
         .header-brand {
@@ -559,144 +417,101 @@ export default function LoginPage() {
 
           gap: 10px;
 
-          color:
-            rgba(241, 247, 253, 0.91);
+          color: #293414;
 
-          font-size: 15px;
+          font-size: 17px;
 
-          font-weight: 650;
+          font-weight: 750;
 
-          letter-spacing: -0.15px;
-
-          text-shadow:
-            0 1px 10px
-            rgba(0, 0, 0, 0.18);
+          letter-spacing: -0.4px;
         }
 
         .header-dot {
-          width: 29px;
-          height: 29px;
+          width: 35px;
+          height: 35px;
 
           display: flex;
           align-items: center;
           justify-content: center;
 
-          border-radius: 10px;
+          border-radius: 12px;
+
+          color: #394718;
 
           background:
             linear-gradient(
               145deg,
-              rgba(43, 113, 180, 0.80),
-              rgba(10, 45, 86, 0.72)
+              rgba(255,255,255,0.34),
+              rgba(194,216,87,0.09)
             );
 
           border:
-            1px solid
-            rgba(155, 207, 246, 0.19);
-
-          color:
-            rgba(242, 249, 255, 0.96);
-
-          font-size: 11px;
-
-          font-weight: 750;
-
-          box-shadow:
-            0 5px 15px
-              rgba(0, 35, 82, 0.28),
-
-            inset 0 1px 1px
-              rgba(220, 240, 255, 0.16),
-
-            inset 0 -1px 1px
-              rgba(0, 0, 0, 0.18);
+            1px solid rgba(255,255,255,0.66);
 
           backdrop-filter:
-            blur(12px);
+            blur(24px)
+            saturate(190%);
 
           -webkit-backdrop-filter:
-            blur(12px);
-
-          transition:
-            transform 400ms
-              cubic-bezier(.2,.8,.2,1),
-
-            box-shadow 400ms ease;
-        }
-
-        .ios-header:hover .header-dot {
-          transform:
-            scale(1.04)
-            translateY(-1px);
+            blur(24px)
+            saturate(190%);
 
           box-shadow:
-            0 7px 18px
-              rgba(0, 45, 100, 0.34),
-
-            inset 0 1px 1px
-              rgba(220, 240, 255, 0.20);
+            inset 0 1px 1px rgba(255,255,255,0.88),
+            inset 0 -1px 1px rgba(70,87,17,0.04),
+            0 8px 22px rgba(72,87,21,0.10);
         }
 
         .header-status {
           display: flex;
           align-items: center;
 
-          gap: 7px;
+          gap: 8px;
 
-          color:
-            rgba(165, 193, 219, 0.50);
+          padding: 7px 12px;
 
-          font-size: 11px;
+          border-radius: 999px;
 
-          font-weight: 500;
+          color: #596633;
 
-          transition:
-            color 400ms ease;
-        }
+          font-size: 12px;
 
-        .ios-header.scrolled .header-status {
-          color:
-            rgba(183, 207, 229, 0.64);
+          font-weight: 650;
+
+          background:
+            rgba(255,255,255,0.065);
+
+          border:
+            1px solid rgba(255,255,255,0.42);
+
+          backdrop-filter:
+            blur(22px)
+            saturate(180%);
+
+          -webkit-backdrop-filter:
+            blur(22px)
+            saturate(180%);
+
+          box-shadow:
+            inset 0 1px 1px rgba(255,255,255,0.58);
         }
 
         .status-dot {
-          width: 6px;
-          height: 6px;
+          width: 7px;
+          height: 7px;
 
           border-radius: 50%;
 
-          background:
-            #3c82c5;
+          background: #91ae35;
 
           box-shadow:
-            0 0 8px
-              rgba(60, 130, 197, 0.42),
-
-            0 0 16px
-              rgba(60, 130, 197, 0.16);
-
-          transition:
-            box-shadow 400ms ease,
-            transform 400ms ease;
+            0 0 0 4px rgba(145,174,53,0.14),
+            0 0 15px rgba(145,174,53,0.38);
         }
 
-        .ios-header.scrolled .status-dot {
-          transform:
-            scale(1.15);
-
-          box-shadow:
-            0 0 9px
-              rgba(70, 145, 215, 0.60),
-
-            0 0 18px
-              rgba(60, 130, 197, 0.24);
-        }
-
-        /*
-        =====================================================
-        LOGIN SECTION
-        =====================================================
-        */
+        /* =====================================================
+           LOGIN AREA
+        ===================================================== */
 
         .login-zone {
           min-height: 100vh;
@@ -706,96 +521,117 @@ export default function LoginPage() {
           justify-content: center;
 
           padding:
-            95px 24px 110px;
-
-          position: relative;
-
-          z-index: 5;
+            120px 20px
+            70px;
         }
 
-        /*
-        =====================================================
-        LOGIN GLASS
-        =====================================================
-        */
+        /* =====================================================
+           FULL TRANSPARENT GLASS LOGIN CONTAINER
+        ===================================================== */
 
         .glass-card {
-          width: 100%;
-          max-width: 425px;
+          --mx: 50%;
+          --my: 50%;
+          --rx: 0deg;
+          --ry: 0deg;
 
           position: relative;
 
-          padding: 38px;
+          width: min(435px, 100%);
 
-          border-radius: 31px;
+          padding:
+            43px 39px
+            35px;
+
+          border-radius: 38px;
+
+          /*
+             MAIN CONTAINER IS VERY TRANSPARENT.
+             The background remains visible through the card.
+          */
 
           background:
             linear-gradient(
-              145deg,
-              rgba(9, 27, 51, 0.68),
-              rgba(2, 12, 27, 0.70)
+              135deg,
+              rgba(255,255,255,0.105) 0%,
+              rgba(255,255,255,0.025) 35%,
+              rgba(221,237,157,0.035) 65%,
+              rgba(255,255,255,0.075) 100%
             );
 
           border:
-            1px solid
-            rgba(145, 181, 216, 0.16);
+            1px solid rgba(255,255,255,0.76);
 
           backdrop-filter:
-            blur(44px)
-            saturate(145%);
+            blur(48px)
+            saturate(225%)
+            brightness(116%)
+            contrast(103%);
 
           -webkit-backdrop-filter:
-            blur(44px)
-            saturate(145%);
+            blur(48px)
+            saturate(225%)
+            brightness(116%)
+            contrast(103%);
 
           box-shadow:
-            0 40px 100px
-              rgba(0, 0, 0, 0.58),
-
-            0 12px 40px
-              rgba(0, 18, 45, 0.30),
-
-            inset 0 1px 1px
-              rgba(190, 220, 248, 0.11),
-
-            inset 0 -1px 1px
-              rgba(0, 0, 0, 0.40);
+            0 55px 130px rgba(48,63,10,0.18),
+            0 25px 65px rgba(67,82,17,0.10),
+            0 0 0 1px rgba(255,255,255,0.15),
+            inset 0 2px 2px rgba(255,255,255,0.96),
+            inset 2px 0 2px rgba(255,255,255,0.30),
+            inset -2px 0 2px rgba(255,255,255,0.10),
+            inset 0 -2px 3px rgba(67,82,15,0.08),
+            inset 0 0 45px rgba(255,255,255,0.075);
 
           transform:
-            perspective(1100px)
+            perspective(1400px)
             rotateX(var(--rx))
             rotateY(var(--ry));
 
           transition:
-            transform 180ms ease-out,
-            box-shadow 350ms ease,
-            border-color 350ms ease;
+            transform 0.16s ease,
+            box-shadow 0.35s ease;
+
+          overflow: hidden;
 
           isolation: isolate;
         }
+
+        /*
+           Moving glass reflection
+        */
 
         .glass-card::before {
           content: "";
 
           position: absolute;
 
-          inset: 0;
-
-          border-radius: inherit;
+          inset: -3px;
 
           pointer-events: none;
 
           background:
             radial-gradient(
-              280px circle
-              at var(--mx) var(--my),
-              rgba(61, 126, 193, 0.13),
-              rgba(23, 65, 108, 0.035) 43%,
-              transparent 72%
+              500px circle at var(--mx) var(--my),
+              rgba(255,255,255,0.40) 0%,
+              rgba(237,247,181,0.16) 18%,
+              rgba(209,232,116,0.065) 38%,
+              transparent 68%
             );
 
-          opacity: 0.9;
+          opacity: 0.92;
+
+          filter: blur(3px);
+
+          mix-blend-mode: screen;
+
+          z-index: 0;
         }
+
+        /*
+           Glass edge/reflection
+        */
 
         .glass-card::after {
           content: "";
@@ -804,184 +640,209 @@ export default function LoginPage() {
 
           inset: 0;
 
-          border-radius: inherit;
-
           pointer-events: none;
+
+          border-radius: inherit;
 
           background:
             linear-gradient(
-              135deg,
-              rgba(188, 219, 244, 0.14),
-              transparent 15%,
-              transparent 80%,
-              rgba(67, 113, 163, 0.06)
+              118deg,
+              rgba(255,255,255,0.46) 0%,
+              rgba(255,255,255,0.17) 9%,
+              rgba(255,255,255,0.025) 22%,
+              transparent 37%
+            ),
+            radial-gradient(
+              ellipse at 50% -20%,
+              rgba(255,255,255,0.40),
+              transparent 58%
+            ),
+            radial-gradient(
+              ellipse at 50% 115%,
+              rgba(168,198,57,0.09),
+              transparent 60%
             );
 
-          mask:
-            linear-gradient(#000 0 0) content-box,
-            linear-gradient(#000 0 0);
+          opacity: 0.82;
 
-          mask-composite: exclude;
-
-          padding: 1px;
+          z-index: 1;
         }
 
-        .glass-card:hover {
-          border-color:
-            rgba(150, 190, 226, 0.21);
+        .glass-card > * {
+          position: relative;
 
-          box-shadow:
-            0 45px 110px
-              rgba(0, 0, 0, 0.62),
-
-            0 15px 45px
-              rgba(0, 22, 55, 0.35),
-
-            inset 0 1px 1px
-              rgba(200, 228, 250, 0.14),
-
-            inset 0 -1px 1px
-              rgba(0, 0, 0, 0.40);
+          z-index: 5;
         }
 
         .top-light {
           position: absolute;
 
-          top: 1px;
-          left: 15%;
+          top: -170px;
+          left: 50%;
 
-          width: 70%;
-          height: 1px;
+          transform: translateX(-50%);
+
+          width: 430px;
+          height: 270px;
 
           background:
-            linear-gradient(
-              90deg,
-              transparent,
-              rgba(205, 228, 248, 0.32),
-              transparent
+            radial-gradient(
+              ellipse,
+              rgba(255,255,255,0.52) 0%,
+              rgba(255,255,255,0.20) 27%,
+              rgba(255,255,255,0.045) 50%,
+              transparent 73%
             );
 
+          filter: blur(20px);
+
           pointer-events: none;
+
+          opacity: 0.75;
+
+          z-index: 2;
         }
 
-        /*
-        =====================================================
-        LOGO
-        =====================================================
-        */
+        /* =====================================================
+           LOGO
+        ===================================================== */
 
         .logo {
-          width: 64px;
-          height: 64px;
+          width: 66px;
+          height: 66px;
 
           margin:
-            0 auto 19px;
+            0 auto
+            22px;
 
           display: flex;
           align-items: center;
           justify-content: center;
 
-          border-radius: 20px;
+          border-radius: 22px;
+
+          color: #374517;
+
+          font-size: 26px;
+
+          font-weight: 800;
+
+          /*
+             Transparent mini glass
+          */
 
           background:
             linear-gradient(
               145deg,
-              #225f9f,
-              #124a8a 52%,
-              #102e61
+              rgba(255,255,255,0.28),
+              rgba(190,214,82,0.07)
             );
 
           border:
-            1px solid
-            rgba(185, 216, 244, 0.17);
+            1px solid rgba(255,255,255,0.70);
 
-          color: #f3f8ff;
+          backdrop-filter:
+            blur(25px)
+            saturate(200%);
 
-          font-size: 25px;
-
-          font-weight: 700;
-
-          box-shadow:
-            0 14px 32px
-              rgba(0, 39, 95, 0.34),
-
-            inset 0 1px 1px
-              rgba(255,255,255,0.18);
-
-          transition:
-            transform 300ms
-              cubic-bezier(.2,.8,.2,1),
-
-            box-shadow 300ms ease;
-        }
-
-        .glass-card:hover .logo {
-          transform:
-            translateY(-2px)
-            scale(1.015);
+          -webkit-backdrop-filter:
+            blur(25px)
+            saturate(200%);
 
           box-shadow:
-            0 18px 38px
-              rgba(0, 48, 115, 0.42),
-
-            inset 0 1px 1px
-              rgba(255,255,255,0.22);
+            inset 0 1px 2px rgba(255,255,255,0.95),
+            inset 0 -1px 2px rgba(70,87,17,0.05),
+            0 18px 38px rgba(70,85,19,0.12);
         }
 
-        /*
-        =====================================================
-        TEXT
-        =====================================================
-        */
+        /* =====================================================
+           TEXT
+        ===================================================== */
 
         .title {
           margin: 0;
 
           text-align: center;
 
-          color: #f3f7fc;
+          color: #273214;
 
-          font-size: 29px;
+          font-size: 31px;
 
           line-height: 1.15;
 
-          font-weight: 700;
+          font-weight: 760;
 
-          letter-spacing: -0.7px;
+          letter-spacing: -1.1px;
+
+          text-shadow:
+            0 1px 0 rgba(255,255,255,0.60);
         }
 
         .subtitle {
           margin:
-            9px 0 29px;
+            10px 0
+            30px;
 
           text-align: center;
 
-          color:
-            rgba(184, 204, 225, 0.60);
+          color: #697545;
 
           font-size: 14px;
 
           line-height: 1.5;
         }
 
-        .label {
-          display: block;
+        /* =====================================================
+           ERROR
+        ===================================================== */
 
-          margin-bottom: 8px;
+        .error {
+          margin-bottom: 18px;
 
-          color:
-            rgba(211, 226, 241, 0.76);
+          padding:
+            12px 14px;
+
+          border-radius: 15px;
+
+          color: #7d3b31;
 
           font-size: 13px;
 
-          font-weight: 600;
+          line-height: 1.4;
+
+          background:
+            rgba(255,225,220,0.16);
+
+          border:
+            1px solid rgba(255,190,180,0.44);
+
+          backdrop-filter:
+            blur(20px);
+
+          -webkit-backdrop-filter:
+            blur(20px);
+
+          box-shadow:
+            inset 0 1px 1px rgba(255,255,255,0.55);
         }
 
-        /*
-        =====================================================
-        INPUTS
-        =====================================================
-        */
+        /* =====================================================
+           FORM
+        ===================================================== */
+
+        .label {
+          display: block;
+
+          margin:
+            0 0
+            8px;
+
+          color: #53602d;
+
+          font-size: 13px;
+
+          font-weight: 650;
+        }
 
         .input-wrap {
           position: relative;
@@ -989,189 +850,130 @@ export default function LoginPage() {
           margin-bottom: 18px;
         }
 
+        /* =====================================================
+           TRANSPARENT INPUT GLASS
+        ===================================================== */
+
         .input {
           width: 100%;
 
-          height: 51px;
+          height: 53px;
 
-          padding: 0 15px;
+          padding:
+            0 16px;
 
-          border-radius: 15px;
+          border-radius: 17px;
 
           outline: none;
 
-          background:
-            rgba(1, 9, 21, 0.67);
-
-          border:
-            1px solid
-            rgba(142, 177, 211, 0.12);
-
-          color: #f5f8fc;
+          color: #2c3619;
 
           font-size: 14px;
 
-          box-shadow:
-            inset 0 1px 2px
-              rgba(0,0,0,0.24),
+          background:
+            linear-gradient(
+              135deg,
+              rgba(255,255,255,0.13),
+              rgba(255,255,255,0.025)
+            );
 
-            inset 0 0 0 1px
-              rgba(255,255,255,0.012);
+          border:
+            1px solid rgba(255,255,255,0.48);
+
+          backdrop-filter:
+            blur(22px)
+            saturate(175%);
+
+          -webkit-backdrop-filter:
+            blur(22px)
+            saturate(175%);
+
+          box-shadow:
+            inset 0 1px 1px rgba(255,255,255,0.70),
+            inset 0 -1px 1px rgba(72,88,17,0.035),
+            0 6px 18px rgba(67,82,17,0.035);
 
           transition:
-            background 250ms ease,
-            border-color 250ms ease,
-            box-shadow 250ms ease,
-            transform 250ms ease;
+            background 0.2s ease,
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
         }
 
         .input::placeholder {
-          color:
-            rgba(158, 183, 208, 0.38);
-        }
-
-        .input:hover {
-          background:
-            rgba(2, 13, 29, 0.76);
-
-          border-color:
-            rgba(150, 190, 225, 0.18);
+          color: #8b9564;
         }
 
         .input:focus {
-          transform:
-            translateY(-1px);
+          border-color:
+            rgba(149,175,57,0.60);
 
           background:
-            rgba(4, 19, 39, 0.80);
-
-          border-color:
-            rgba(73, 132, 195, 0.48);
+            rgba(255,255,255,0.20);
 
           box-shadow:
-            0 0 0 4px
-              rgba(33, 100, 172, 0.10),
-
-            0 8px 24px
-              rgba(0, 30, 75, 0.18),
-
-            inset 0 1px 2px
-              rgba(150, 195, 235, 0.05);
+            0 0 0 4px rgba(161,186,68,0.10),
+            0 8px 22px rgba(70,85,18,0.06),
+            inset 0 1px 1px rgba(255,255,255,0.86);
         }
 
-        /*
-        =====================================================
-        SHOW PASSWORD
-        =====================================================
-        */
+        /* =====================================================
+           SHOW PASSWORD
+        ===================================================== */
 
         .show-button {
           position: absolute;
 
+          top: 50%;
           right: 9px;
 
-          top: 50%;
+          transform: translateY(-50%);
 
-          transform:
-            translateY(-50%);
+          height: 36px;
 
-          padding: 7px 10px;
+          padding:
+            0 11px;
 
-          border-radius: 9px;
+          border-radius: 11px;
 
-          border:
-            1px solid
-            rgba(145, 180, 215, 0.11);
+          color: #617031;
 
           background:
-            rgba(66, 101, 138, 0.10);
+            rgba(255,255,255,0.075);
 
-          color: #83acd4;
+          border:
+            1px solid rgba(255,255,255,0.40);
 
-          font-size: 11px;
+          backdrop-filter:
+            blur(18px);
 
-          font-weight: 600;
+          -webkit-backdrop-filter:
+            blur(18px);
 
           cursor: pointer;
 
+          font-size: 12px;
+
+          font-weight: 650;
+
           transition:
-            background 180ms ease,
-            transform 180ms ease;
+            background 0.2s ease,
+            transform 0.2s ease;
         }
 
         .show-button:hover {
           background:
-            rgba(82, 127, 172, 0.17);
-
-          transform:
-            translateY(-50%)
-            scale(1.03);
+            rgba(255,255,255,0.18);
         }
 
         .show-button:active {
           transform:
             translateY(-50%)
-            scale(0.94);
+            scale(0.96);
         }
 
-        /*
-        =====================================================
-        ERROR
-        =====================================================
-        */
-
-        .error {
-          margin-bottom: 17px;
-
-          padding: 11px 13px;
-
-          border-radius: 13px;
-
-          background:
-            rgba(92, 22, 32, 0.25);
-
-          border:
-            1px solid
-            rgba(215, 100, 112, 0.17);
-
-          color: #efb5bb;
-
-          font-size: 13px;
-
-          backdrop-filter:
-            blur(16px);
-
-          -webkit-backdrop-filter:
-            blur(16px);
-
-          animation:
-            errorIn 280ms
-            cubic-bezier(.2,.8,.2,1);
-        }
-
-        @keyframes errorIn {
-          from {
-            opacity: 0;
-
-            transform:
-              translateY(-5px)
-              scale(0.98);
-          }
-
-          to {
-            opacity: 1;
-
-            transform:
-              translateY(0)
-              scale(1);
-          }
-        }
-
-        /*
-        =====================================================
-        OPTIONS
-        =====================================================
-        */
+        /* =====================================================
+           OPTIONS
+        ===================================================== */
 
         .options {
           display: flex;
@@ -1180,9 +982,11 @@ export default function LoginPage() {
 
           justify-content: space-between;
 
-          margin-top: 2px;
+          gap: 10px;
 
-          margin-bottom: 24px;
+          margin:
+            4px 0
+            22px;
         }
 
         .remember {
@@ -1192,103 +996,120 @@ export default function LoginPage() {
 
           gap: 8px;
 
-          color:
-            rgba(185, 204, 224, 0.59);
+          color: #687443;
 
-          font-size: 13px;
+          font-size: 12px;
 
           cursor: pointer;
         }
 
         .remember input {
-          width: 15px;
-          height: 15px;
+          appearance: none;
+
+          width: 16px;
+          height: 16px;
 
           margin: 0;
 
-          accent-color: #3d82c4;
+          border-radius: 5px;
+
+          border:
+            1px solid rgba(108,124,44,0.30);
+
+          background:
+            rgba(255,255,255,0.13);
 
           cursor: pointer;
+        }
+
+        .remember input:checked {
+          background: #99af3d;
+
+          border-color: #99af3d;
+        }
+
+        .remember input:checked::after {
+          content: "";
+
+          display: block;
+
+          width: 4px;
+          height: 8px;
+
+          margin-left: 5px;
+          margin-top: 2px;
+
+          border:
+            solid white;
+
+          border-width:
+            0 2px 2px 0;
+
+          transform: rotate(45deg);
         }
 
         .forgot {
-          padding: 4px;
+          padding: 0;
 
-          border: none;
+          border: 0;
 
           background: transparent;
 
-          color: #78a9d8;
+          color: #647130;
 
-          font-size: 13px;
-
-          font-weight: 600;
-
-          cursor: pointer;
-
-          transition:
-            color 180ms ease,
-            transform 180ms ease;
-        }
-
-        .forgot:hover {
-          color: #afd0ef;
-
-          transform:
-            translateY(-1px);
-        }
-
-        /*
-        =====================================================
-        LOGIN BUTTON
-        =====================================================
-        */
-
-        .login-button {
-          width: 100%;
-
-          height: 52px;
-
-          position: relative;
-
-          overflow: hidden;
-
-          border-radius: 15px;
-
-          border:
-            1px solid
-            rgba(178, 213, 245, 0.17);
-
-          background:
-            linear-gradient(
-              135deg,
-              #286ba9,
-              #185794 48%,
-              #203f82
-            );
-
-          color: #ffffff;
-
-          font-size: 15px;
+          font-size: 12px;
 
           font-weight: 650;
 
           cursor: pointer;
+        }
+
+        .forgot:hover {
+          color: #44521b;
+        }
+
+        /* =====================================================
+           LOGIN BUTTON
+        ===================================================== */
+
+        .login-button {
+          position: relative;
+
+          width: 100%;
+
+          height: 54px;
+
+          overflow: hidden;
+
+          border-radius: 17px;
+
+          border:
+            1px solid rgba(255,255,255,0.52);
+
+          color: #faffea;
+
+          background:
+            linear-gradient(
+              135deg,
+              rgba(116,141,32,0.90),
+              rgba(159,181,56,0.86)
+            );
 
           box-shadow:
-            0 12px 28px
-              rgba(0, 48, 110, 0.30),
+            0 17px 34px rgba(80,97,23,0.20),
+            inset 0 1px 1px rgba(255,255,255,0.44),
+            inset 0 -1px 1px rgba(65,81,16,0.13);
 
-            inset 0 1px 1px
-              rgba(255,255,255,0.18);
+          cursor: pointer;
+
+          font-size: 14px;
+
+          font-weight: 700;
 
           transition:
-            transform 180ms
-              cubic-bezier(.2,.8,.2,1),
-
-            box-shadow 250ms ease,
-
-            filter 250ms ease;
+            transform 0.2s ease,
+            box-shadow 0.2s ease,
+            filter 0.2s ease;
         }
 
         .login-button::before {
@@ -1296,124 +1117,60 @@ export default function LoginPage() {
 
           position: absolute;
 
-          top: -30%;
+          top: 0;
+          left: -100%;
 
-          left: -80%;
-
-          width: 45%;
-
-          height: 160%;
-
-          transform:
-            skewX(-20deg);
+          width: 70%;
+          height: 100%;
 
           background:
             linear-gradient(
               90deg,
               transparent,
-              rgba(215, 237, 255, 0.17),
+              rgba(255,255,255,0.28),
               transparent
             );
 
+          transform: skewX(-20deg);
+
           transition:
-            left 600ms ease;
+            left 0.55s ease;
         }
 
         .login-button:hover::before {
           left: 140%;
         }
 
-        .login-button:hover {
+        .login-button:hover:not(:disabled) {
           transform:
-            translateY(-1px);
+            translateY(-2px);
 
           filter:
-            brightness(1.06);
+            brightness(1.05);
 
           box-shadow:
-            0 16px 34px
-              rgba(0, 48, 115, 0.36),
-
-            inset 0 1px 1px
-              rgba(255,255,255,0.21);
+            0 23px 40px rgba(80,97,23,0.25),
+            inset 0 1px 1px rgba(255,255,255,0.48);
         }
 
-        .login-button:active {
+        .login-button:active:not(:disabled) {
           transform:
-            translateY(1px)
             scale(0.985);
+        }
 
-          box-shadow:
-            0 7px 15px
-              rgba(0, 40, 90, 0.24),
+        .login-button.loading {
+          opacity: 0.72;
 
-            inset 0 2px 3px
-              rgba(0,0,0,0.16);
+          cursor: wait;
         }
 
         .login-button:disabled {
           cursor: not-allowed;
-
-          opacity: 0.72;
-
-          transform: none;
         }
 
-        /*
-        =====================================================
-        LIQUID LOADING
-        =====================================================
-        */
-
-        .login-button.loading::after {
-          content: "";
-
-          position: absolute;
-
-          width: 180%;
-
-          height: 240%;
-
-          left: -40%;
-
-          top: -70%;
-
-          border-radius: 48%;
-
-          background:
-            rgba(180, 220, 255, 0.08);
-
-          animation:
-            liquid 1.5s
-            ease-in-out
-            infinite;
-        }
-
-        @keyframes liquid {
-          0% {
-            transform:
-              translateX(-25%)
-              rotate(0deg);
-          }
-
-          50% {
-            transform:
-              translateX(25%)
-              rotate(180deg);
-          }
-
-          100% {
-            transform:
-              translateX(-25%)
-              rotate(360deg);
-          }
-        }
-
-        /*
-        =====================================================
-        DIVIDER
-        =====================================================
-        */
+        /* =====================================================
+           DIVIDER
+        ===================================================== */
 
         .divider {
           display: flex;
@@ -1423,7 +1180,8 @@ export default function LoginPage() {
           gap: 12px;
 
           margin:
-            25px 0 20px;
+            25px 0
+            21px;
         }
 
         .divider-line {
@@ -1435,172 +1193,184 @@ export default function LoginPage() {
             linear-gradient(
               90deg,
               transparent,
-              rgba(145, 178, 208, 0.13),
+              rgba(96,112,38,0.20),
               transparent
             );
         }
 
         .divider-text {
-          color:
-            rgba(162, 185, 209, 0.38);
+          color: #899361;
 
-          font-size: 9px;
+          font-size: 10px;
 
           font-weight: 700;
 
-          letter-spacing: 1.2px;
+          letter-spacing: 1px;
         }
 
-        /*
-        =====================================================
-        REGISTER
-        =====================================================
-        */
+        /* =====================================================
+           REGISTER
+        ===================================================== */
 
         .register {
           text-align: center;
 
-          color:
-            rgba(184, 203, 223, 0.55);
+          color: #737d50;
 
-          font-size: 13px;
+          font-size: 12px;
         }
 
         .register-button {
           padding: 0;
 
-          border: none;
+          border: 0;
 
           background: transparent;
 
-          color: #78a9d8;
+          color: #586827;
 
-          font-size: 13px;
+          font-size: 12px;
 
-          font-weight: 650;
+          font-weight: 700;
 
           cursor: pointer;
-
-          transition:
-            color 180ms ease,
-            text-shadow 180ms ease;
         }
 
         .register-button:hover {
-          color: #b1d1ee;
-
-          text-shadow:
-            0 0 12px
-            rgba(73, 132, 195, 0.28);
+          color: #3f4d18;
         }
 
-        /*
-        =====================================================
-        SCROLL SPACE
-        =====================================================
-        */
+        /* =====================================================
+           SCROLL INDICATOR
+        ===================================================== */
 
         .scroll-space {
-          height: 25vh;
+          position: absolute;
 
-          display: flex;
+          bottom: 18px;
+          left: 50%;
 
-          justify-content: center;
+          transform:
+            translateX(-50%);
 
-          align-items: flex-start;
-
-          position: relative;
-
-          z-index: 3;
+          opacity: 0.40;
         }
 
         .scroll-hint {
-          color:
-            rgba(120, 153, 185, 0.25);
+          display: block;
 
-          font-size: 10px;
+          width: 20px;
+          height: 32px;
 
-          letter-spacing: 1.4px;
+          border:
+            1px solid rgba(80,94,31,0.30);
 
-          text-transform: uppercase;
+          border-radius: 999px;
+
+          position: relative;
         }
 
-        /*
-        =====================================================
-        MOBILE
-        =====================================================
-        */
+        .scroll-hint::after {
+          content: "";
 
-        @media (max-width: 520px) {
+          position: absolute;
+
+          top: 7px;
+          left: 50%;
+
+          width: 3px;
+          height: 7px;
+
+          transform:
+            translateX(-50%);
+
+          border-radius: 999px;
+
+          background:
+            rgba(75,91,27,0.45);
+        }
+
+        /* =====================================================
+           MOBILE
+        ===================================================== */
+
+        @media (max-width: 600px) {
           .ios-header {
             width:
-              calc(100% - 22px);
+              calc(100% - 20px);
 
-            top: 9px;
+            top: 10px;
 
-            height: 56px;
-
-            border-radius: 19px;
+            height: 58px;
 
             padding:
               0 14px;
+
+            border-radius: 20px;
           }
 
-          .ios-header.scrolled {
-            top: 7px;
-
-            height: 53px;
+          .header-brand {
+            font-size: 15px;
           }
 
           .header-status {
-            display: none;
+            padding:
+              6px 9px;
+
+            font-size: 10px;
           }
 
           .login-zone {
             padding:
-              92px 15px 80px;
+              100px 15px
+              55px;
           }
 
           .glass-card {
-            padding:
-              30px 23px;
+            width:
+              min(435px, 100%);
 
-            border-radius: 27px;
+            padding:
+              34px 23px
+              28px;
+
+            border-radius: 31px;
+
+            backdrop-filter:
+              blur(40px)
+              saturate(210%)
+              brightness(114%);
+
+            -webkit-backdrop-filter:
+              blur(40px)
+              saturate(210%)
+              brightness(114%);
           }
 
           .title {
-            font-size: 27px;
+            font-size: 28px;
+          }
+
+          .subtitle {
+            margin-bottom: 25px;
           }
         }
 
-        /*
-        =====================================================
-        REDUCED MOTION
-        =====================================================
-        */
-
         @media (prefers-reduced-motion: reduce) {
-          html {
-            scroll-behavior: auto;
-          }
-
-          .ambient,
           .glass-card,
-          .logo,
-          .input,
+          .ios-header,
           .login-button,
-          .error,
-          .ios-header {
-            animation: none !important;
-
-            transition: none !important;
+          .show-button {
+            transition: none;
           }
         }
       `}</style>
 
       <main className="ios-page">
 
-        {/* Floating Liquid Glass Header */}
+        {/* =====================================================
+            HEADER
+        ===================================================== */}
 
         <header
           className={`ios-header ${
@@ -1624,27 +1394,35 @@ export default function LoginPage() {
           </div>
         </header>
 
-        {/* Ambient background */}
+        {/* =====================================================
+            AMBIENT BACKGROUND
+        ===================================================== */}
 
         <div className="ambient ambient-one" />
-
         <div className="ambient ambient-two" />
-
         <div className="ambient ambient-three" />
 
-        {/* Login */}
+        {/* =====================================================
+            LOGIN
+        ===================================================== */}
 
         <section className="login-zone">
+
           <form
             ref={cardRef}
             onSubmit={handleLogin}
             className="glass-card"
           >
+
             <div className="top-light" />
+
+            {/* Logo */}
 
             <div className="logo">
               S
             </div>
+
+            {/* Title */}
 
             <h1 className="title">
               Welcome Back
@@ -1654,11 +1432,15 @@ export default function LoginPage() {
               Sign in to continue to your account
             </p>
 
+            {/* Error */}
+
             {error && (
               <div className="error">
                 {error}
               </div>
             )}
+
+            {/* Email */}
 
             <label
               htmlFor="email"
@@ -1668,6 +1450,7 @@ export default function LoginPage() {
             </label>
 
             <div className="input-wrap">
+
               <input
                 id="email"
                 type="email"
@@ -1679,7 +1462,10 @@ export default function LoginPage() {
                 required
                 className="input"
               />
+
             </div>
+
+            {/* Password */}
 
             <label
               htmlFor="password"
@@ -1689,6 +1475,7 @@ export default function LoginPage() {
             </label>
 
             <div className="input-wrap">
+
               <input
                 id="password"
                 type={
@@ -1721,10 +1508,15 @@ export default function LoginPage() {
                   ? "Hide"
                   : "Show"}
               </button>
+
             </div>
 
+            {/* Options */}
+
             <div className="options">
+
               <label className="remember">
+
                 <input
                   type="checkbox"
                   checked={rememberMe}
@@ -1736,6 +1528,7 @@ export default function LoginPage() {
                 />
 
                 Remember me
+
               </label>
 
               <button
@@ -1749,15 +1542,16 @@ export default function LoginPage() {
               >
                 Forgot password?
               </button>
+
             </div>
+
+            {/* Login */}
 
             <button
               type="submit"
               disabled={loading}
               className={`login-button ${
-                loading
-                  ? "loading"
-                  : ""
+                loading ? "loading" : ""
               }`}
             >
               {loading
@@ -1765,7 +1559,10 @@ export default function LoginPage() {
                 : "Login"}
             </button>
 
+            {/* Divider */}
+
             <div className="divider">
+
               <div className="divider-line" />
 
               <span className="divider-text">
@@ -1773,9 +1570,13 @@ export default function LoginPage() {
               </span>
 
               <div className="divider-line" />
+
             </div>
 
+            {/* Register */}
+
             <div className="register">
+
               Don't have an account?{" "}
 
               <button
@@ -1789,18 +1590,20 @@ export default function LoginPage() {
               >
                 Create account
               </button>
+
             </div>
+
           </form>
+
         </section>
 
+        {/* Scroll indicator */}
+
         <div className="scroll-space">
-          <span className="scroll-hint">
-           
-          </span>
+          <span className="scroll-hint" />
         </div>
 
       </main>
     </>
   );
 }
-
