@@ -1579,18 +1579,15 @@ export default function LoginPage() {
 
               Don't have an account?{" "}
 
-              <button
-                type="button"
-                className="register-button"
-                onClick={() =>
-                  alert(
-                    "Registration page coming soon."
-                  )
-                }
-              >
-                Create account
-              </button>
-
+            <button
+              type="button"
+              className="register-button"
+              onClick={() => {
+                window.location.href = "/register";
+              }}
+            >
+              Create account
+            </button>
             </div>
 
           </form>
