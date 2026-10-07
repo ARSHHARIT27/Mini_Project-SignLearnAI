@@ -3,565 +3,473 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 /* =========================================================
+   ASL DATA
+========================================================= */
+
+const ALPHABET = [
+  "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+  "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+];
+
+const SIGN_IMAGES: Record<string, string> = Object.fromEntries(
+  ALPHABET.map((letter) => [
+    letter,
+    `https://commons.wikimedia.org/wiki/Special:FilePath/Sign%20language%20${letter}.svg`,
+  ])
+);
+
+const LETTER_NAMES: Record<string, string> = Object.fromEntries(
+  ALPHABET.map((letter) => [letter, letter])
+);
+
+/* =========================================================
    TYPES
 ========================================================= */
 
-type IconName =
-  | "grid"
-  | "book"
-  | "camera"
-  | "brain"
-  | "chart"
-  | "trophy"
-  | "settings"
-  | "search"
-  | "bell"
-  | "chevron"
-  | "play"
-  | "pause"
-  | "stop"
-  | "maximize"
-  | "mirror"
-  | "refresh"
-  | "target"
-  | "clock"
-  | "check"
-  | "lock"
-  | "arrow"
-  | "flame"
-  | "spark"
-  | "users"
-  | "help"
-  | "logout"
-  | "close"
-  | "menu"
-  | "cameraOff"
-  | "volume"
-  | "bookmark"
-  | "more"
-  | "activity"
-  | "shield"
-  | "zap"
-  | "hand"
-  | "playCircle";
+type HandPoint = {
+  x: number;
+  y: number;
+  z: number;
+};
 
-/* =========================================================
-   INLINE ICON SYSTEM
-   No external icon package required.
-========================================================= */
+type GestureResult =
+  | {
+      status: "correct";
+      letter: string;
+      confidence: number;
+    }
+  | {
+      status: "incorrect";
+      letter: string;
+      confidence: number;
+    };
 
-function Icon({
-  name,
-  size = 20,
-  strokeWidth = 1.8,
-}: {
-  name: IconName;
-  size?: number;
-  strokeWidth?: number;
-}) {
-  const common = {
-    width: size,
-    height: size,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const,
-    "aria-hidden": true,
-  };
-
-  switch (name) {
-    case "grid":
-      return (
-        <svg {...common}>
-          <rect x="3" y="3" width="7" height="7" rx="2" />
-          <rect x="14" y="3" width="7" height="7" rx="2" />
-          <rect x="3" y="14" width="7" height="7" rx="2" />
-          <rect x="14" y="14" width="7" height="7" rx="2" />
-        </svg>
-      );
-
-    case "book":
-      return (
-        <svg {...common}>
-          <path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 0 4 22V5.5Z" />
-          <path d="M4 5.5V20" />
-          <path d="M8 7h8" />
-          <path d="M8 11h8" />
-        </svg>
-      );
-
-    case "camera":
-      return (
-        <svg {...common}>
-          <path d="M4 7h3l1.5-2h7L17 7h3a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z" />
-          <circle cx="12" cy="13" r="4" />
-        </svg>
-      );
-
-    case "cameraOff":
-      return (
-        <svg {...common}>
-          <path d="m3 3 18 18" />
-          <path d="M9 7H7a2 2 0 0 0-2 2v8" />
-          <path d="M17 7h1a2 2 0 0 1 2 2v7" />
-          <path d="m9 5 1.5-2h3L15 5" />
-          <path d="M8 19h9" />
-          <circle cx="12" cy="13" r="3" />
-        </svg>
-      );
-
-    case "brain":
-      return (
-        <svg {...common}>
-          <path d="M9.5 4.5A3 3 0 0 0 6 7.3 3.2 3.2 0 0 0 4 10a3.3 3.3 0 0 0 2 3.05A3.2 3.2 0 0 0 9 18a3 3 0 0 0 3-3V7a3 3 0 0 0-2.5-2.5Z" />
-          <path d="M14.5 4.5A3 3 0 0 1 18 7.3 3.2 3.2 0 0 1 20 10a3.3 3.3 0 0 1-2 3.05A3.2 3.2 0 0 1 15 18a3 3 0 0 1-3-3V7a3 3 0 0 1 2.5-2.5Z" />
-          <path d="M8 9h1M15 9h1M8 13h1M15 13h1" />
-        </svg>
-      );
-
-    case "chart":
-      return (
-        <svg {...common}>
-          <path d="M4 19V5" />
-          <path d="M4 19h17" />
-          <path d="m7 15 4-4 3 2 5-7" />
-        </svg>
-      );
-
-    case "trophy":
-      return (
-        <svg {...common}>
-          <path d="M8 4h8v5a4 4 0 0 1-8 0V4Z" />
-          <path d="M8 6H4v2a4 4 0 0 0 4 4M16 6h4v2a4 4 0 0 1-4 4" />
-          <path d="M12 13v4M8 21h8M9 17h6" />
-        </svg>
-      );
-
-    case "settings":
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="3" />
-          <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.7 1.7-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.55V20h-2.4v-.21a1.7 1.7 0 0 0-1.03-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06-1.7-1.7.06-.06A1.7 1.7 0 0 0 8.46 15 1.7 1.7 0 0 0 6.91 14H6.7v-2.4h.21A1.7 1.7 0 0 0 8.46 10a1.7 1.7 0 0 0-.34-1.88l-.06-.06 1.7-1.7.06.06a1.7 1.7 0 0 0 1.88.34 1.7 1.7 0 0 0 1.03-1.55V5h2.4v.21A1.7 1.7 0 0 0 16.16 6.76a1.7 1.7 0 0 0 1.88-.34l.06-.06 1.7 1.7-.06.06A1.7 1.7 0 0 0 19.4 10a1.7 1.7 0 0 0 1.55 1.03H21v2.4h-.21A1.7 1.7 0 0 0 19.4 15Z" />
-        </svg>
-      );
-
-    case "search":
-      return (
-        <svg {...common}>
-          <circle cx="11" cy="11" r="7" />
-          <path d="m20 20-4-4" />
-        </svg>
-      );
-
-    case "bell":
-      return (
-        <svg {...common}>
-          <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
-          <path d="M10 21h4" />
-        </svg>
-      );
-
-    case "chevron":
-      return (
-        <svg {...common}>
-          <path d="m9 18 6-6-6-6" />
-        </svg>
-      );
-
-    case "play":
-      return (
-        <svg {...common}>
-          <path d="m8 5 11 7-11 7V5Z" fill="currentColor" />
-        </svg>
-      );
-
-    case "stop":
-      return (
-        <svg {...common}>
-          <rect x="6" y="6" width="12" height="12" rx="2" />
-        </svg>
-      );
-
-    case "maximize":
-      return (
-        <svg {...common}>
-          <path d="M8 3H3v5M3 3l6 6M16 3h5v5M21 3l-6 6M8 21H3v-5M3 21l6-6M16 21h5v-5M21 21l-6-6" />
-        </svg>
-      );
-
-    case "mirror":
-      return (
-        <svg {...common}>
-          <path d="M12 4v16M8 7 4 9v6l4 2V7Zm8 0 4 2v6l-4 2V7Z" />
-        </svg>
-      );
-
-    case "refresh":
-      return (
-        <svg {...common}>
-          <path d="M20 11a8 8 0 0 0-14.8-4L3 9M3 4v5h5M4 13a8 8 0 0 0 14.8 4L21 15M21 20v-5h-5" />
-        </svg>
-      );
-
-    case "target":
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="8" />
-          <circle cx="12" cy="12" r="4" />
-          <circle cx="12" cy="12" r="1" fill="currentColor" />
-        </svg>
-      );
-
-    case "clock":
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="9" />
-          <path d="M12 7v5l3 2" />
-        </svg>
-      );
-
-    case "check":
-      return (
-        <svg {...common}>
-          <path d="m5 12 4 4L19 6" />
-        </svg>
-      );
-
-    case "arrow":
-      return (
-        <svg {...common}>
-          <path d="M5 12h14M13 6l6 6-6 6" />
-        </svg>
-      );
-
-    case "flame":
-      return (
-        <svg {...common}>
-          <path d="M12 22c4 0 7-2.7 7-7 0-3.2-2-5.4-4.4-7.8.1 2.2-1.1 3.5-2.4 4.3.1-3.7-1.8-6.6-4.2-8.5.1 4.5-4 6.7-4 11.4C4 18.8 7.2 22 12 22Z" />
-        </svg>
-      );
-
-    case "spark":
-      return (
-        <svg {...common}>
-          <path d="m12 3 1.3 5.7L19 10l-5.7 1.3L12 17l-1.3-5.7L5 10l5.7-1.3L12 3Z" />
-          <path d="m19 16 .6 2.4L22 19l-2.4.6L19 22l-.6-2.4L16 19l2.4-.6L19 16Z" />
-        </svg>
-      );
-
-    case "help":
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="9" />
-          <path d="M9.7 9a2.4 2.4 0 1 1 3.9 1.9c-1.1.8-1.6 1.2-1.6 2.6M12 17h.01" />
-        </svg>
-      );
-
-    case "logout":
-      return (
-        <svg {...common}>
-          <path d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10" />
-        </svg>
-      );
-
-    case "close":
-      return (
-        <svg {...common}>
-          <path d="m6 6 12 12M18 6 6 18" />
-        </svg>
-      );
-
-    case "menu":
-      return (
-        <svg {...common}>
-          <path d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      );
-
-    case "volume":
-      return (
-        <svg {...common}>
-          <path d="M5 10v4h3l4 3V7l-4 3H5Z" />
-          <path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11" />
-        </svg>
-      );
-
-    case "bookmark":
-      return (
-        <svg {...common}>
-          <path d="M6 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18l-6-4-6 4V4Z" />
-        </svg>
-      );
-
-    case "more":
-      return (
-        <svg {...common}>
-          <circle cx="5" cy="12" r="1" fill="currentColor" />
-          <circle cx="12" cy="12" r="1" fill="currentColor" />
-          <circle cx="19" cy="12" r="1" fill="currentColor" />
-        </svg>
-      );
-
-    case "activity":
-      return (
-        <svg {...common}>
-          <path d="M3 12h4l2-7 4 14 2-7h6" />
-        </svg>
-      );
-
-    case "shield":
-      return (
-        <svg {...common}>
-          <path d="M12 3 20 6v6c0 5-3.2 8-8 9-4.8-1-8-4-8-9V6l8-3Z" />
-          <path d="m9 12 2 2 4-4" />
-        </svg>
-      );
-
-    case "zap":
-      return (
-        <svg {...common}>
-          <path d="m13 2-9 12h7l-1 8 9-12h-7l1-8Z" />
-        </svg>
-      );
-
-    case "hand":
-      return (
-        <svg {...common}>
-          <path d="M7 11V5a1.5 1.5 0 0 1 3 0v5M10 9V3.8a1.5 1.5 0 0 1 3 0V10M13 9V5a1.5 1.5 0 0 1 3 0v6M16 11V8a1.5 1.5 0 0 1 3 0v7c0 4-2.5 6-6 6h-1c-3 0-5.5-1.5-7-4l-2-4a1.6 1.6 0 0 1 2.8-1.5L7 14V11" />
-        </svg>
-      );
-
-    case "playCircle":
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="9" />
-          <path d="m10 8 5 4-5 4V8Z" fill="currentColor" />
-        </svg>
-      );
-
-    case "users":
-      return (
-        <svg {...common}>
-          <circle cx="9" cy="8" r="3" />
-          <path d="M3 20c.5-3.2 2.5-5 6-5s5.5 1.8 6 5M16 5.5a3 3 0 0 1 0 5.8M17 15c2.2.3 3.5 1.9 4 4" />
-        </svg>
-      );
-
-    default:
-      return null;
+declare global {
+  interface Window {
+    Hands?: any;
   }
 }
 
 /* =========================================================
-   DATA
+   HELPERS
 ========================================================= */
 
-const lessons = [
-  {
-    title: "ASL Alphabet",
-    description: "Master the 26 fundamental handshapes.",
-    progress: 72,
-    level: "Beginner",
-    duration: "18 min",
-    icon: "A",
-  },
-  {
-    title: "Everyday Greetings",
-    description: "Learn signs for common conversations.",
-    progress: 44,
-    level: "Beginner",
-    duration: "24 min",
-    icon: "Hi",
-  },
-  {
-    title: "Numbers & Counting",
-    description: "Practice numbers from 1 to 100.",
-    progress: 28,
-    level: "Beginner",
-    duration: "16 min",
-    icon: "01",
-  },
-  {
-    title: "Family & People",
-    description: "Build your everyday vocabulary.",
-    progress: 12,
-    level: "Intermediate",
-    duration: "31 min",
-    icon: "FM",
-  },
-];
+function distance(a: HandPoint, b: HandPoint) {
+  return Math.sqrt(
+    Math.pow(a.x - b.x, 2) +
+      Math.pow(a.y - b.y, 2) +
+      Math.pow(a.z - b.z, 2)
+  );
+}
 
-const alphabet = [
-  "A",
-  "B",
-  "C",
-  "D",
-  "E",
-  "F",
-  "G",
-  "H",
-  "I",
-  "J",
-  "K",
-  "L",
-];
+function angleAt(a: HandPoint, b: HandPoint, c: HandPoint) {
+  const ab = { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+  const cb = { x: c.x - b.x, y: c.y - b.y, z: c.z - b.z };
+  const dot = ab.x * cb.x + ab.y * cb.y + ab.z * cb.z;
+  const la = Math.hypot(ab.x, ab.y, ab.z);
+  const lc = Math.hypot(cb.x, cb.y, cb.z);
+  if (!la || !lc) return 0;
+  return (Math.acos(Math.max(-1, Math.min(1, dot / (la * lc)))) * 180) / Math.PI;
+}
 
-const activities = [
-  {
-    title: "Alphabet practice",
-    meta: "12 signs completed",
-    time: "Today",
-    icon: "hand" as IconName,
-  },
-  {
-    title: "Greetings lesson",
-    meta: "7 / 16 signs",
-    time: "Yesterday",
-    icon: "book" as IconName,
-  },
-  {
-    title: "Quick quiz",
-    meta: "8 / 10 correct",
-    time: "Yesterday",
-    icon: "brain" as IconName,
-  },
-];
+function looksLikeZPath(points: HandPoint[]): boolean {
+  if (points.length < 12) return false;
+
+  const sampled = points.filter((_, i) => i % 2 === 0);
+  if (sampled.length < 9) return false;
+
+  const minX = Math.min(...sampled.map((p) => p.x));
+  const maxX = Math.max(...sampled.map((p) => p.x));
+  const minY = Math.min(...sampled.map((p) => p.y));
+  const maxY = Math.max(...sampled.map((p) => p.y));
+  const width = maxX - minX;
+  const height = maxY - minY;
+
+  if (width < 0.16 || height < 0.1) return false;
+
+  const n = sampled.length;
+  const a = sampled.slice(0, Math.floor(n / 3));
+  const b = sampled.slice(Math.floor(n / 3), Math.floor((2 * n) / 3));
+  const c = sampled.slice(Math.floor((2 * n) / 3));
+
+  const dx = (arr: HandPoint[]) => arr[arr.length - 1].x - arr[0].x;
+  const dy = (arr: HandPoint[]) => arr[arr.length - 1].y - arr[0].y;
+
+  const ax = dx(a);
+  const ay = dy(a);
+  const bx = dx(b);
+  const by = dy(b);
+  const cx = dx(c);
+  const cy = dy(c);
+
+  const firstHorizontal = Math.abs(ax) > 0.055 && Math.abs(ax) > Math.abs(ay) * 1.8;
+  const middleDiagonal = Math.abs(bx) > 0.045 && Math.abs(by) > 0.045;
+  const lastHorizontal = Math.abs(cx) > 0.045 && Math.abs(cx) > Math.abs(cy) * 1.6;
+
+  const sameHorizontalDirection = Math.sign(ax) === Math.sign(cx);
+  const diagonalReversesX = Math.sign(bx) !== Math.sign(ax);
+  const diagonalMovesDown = Math.abs(by) > 0.04;
+
+  return (
+    firstHorizontal &&
+    middleDiagonal &&
+    lastHorizontal &&
+    sameHorizontalDirection &&
+    diagonalReversesX &&
+    diagonalMovesDown
+  );
+}
+
+function looksLikeJPath(points: HandPoint[]): boolean {
+  if (points.length < 14) return false;
+  const sampled = points.filter((_, i) => i % 2 === 0);
+  if (sampled.length < 7) return false;
+
+  const minX = Math.min(...sampled.map((p) => p.x));
+  const maxX = Math.max(...sampled.map((p) => p.x));
+  const minY = Math.min(...sampled.map((p) => p.y));
+  const maxY = Math.max(...sampled.map((p) => p.y));
+  const width = maxX - minX;
+  const height = maxY - minY;
+  if (height < 0.14 || width < 0.07) return false;
+
+  const n = sampled.length;
+  const a = sampled.slice(0, Math.floor(n / 2));
+  const b = sampled.slice(Math.floor(n / 2));
+  const ay = a[a.length - 1].y - a[0].y;
+  const bx = b[b.length - 1].x - b[0].x;
+  const by = b[b.length - 1].y - b[0].y;
+  return ay > 0.06 && Math.abs(bx) > 0.035 && by < 0.035;
+}
 
 /* =========================================================
-   DASHBOARD
+   LOOSE GESTURE CLASSIFIER
+   - rotation / distance tolerant
+   - scores the hand against every letter
+   - look-alike letters are accepted as a family
+   - J and Z pass on handshape alone; motion only adds confidence
+========================================================= */
+
+function classifyGesture(
+  raw: any[],
+  targetSign?: string,
+  movementPath: HandPoint[] = [],
+  jMovementPath: HandPoint[] = []
+): { letter: string; confidence: number } {
+  if (!targetSign || raw.length < 21) return { letter: "?", confidence: 0 };
+
+  const p: HandPoint[] = raw.map((q) => ({ x: q.x, y: q.y, z: q.z || 0 }));
+  const d = (a: number, b: number) => distance(p[a], p[b]);
+  const clamp = (v: number) => Math.max(0, Math.min(1, v));
+
+  // Palm size makes every measurement independent of camera distance.
+  const palm = Math.max(0.001, (d(0, 9) + d(5, 17)) / 2);
+  const n = (a: number, b: number) => d(a, b) / palm;
+
+  // Finger extension 0..1 (rotation-invariant)
+  const fingerExt = (tip: number, pip: number, mcp: number) => {
+    const reach = d(tip, 0) / Math.max(0.001, d(mcp, 0));
+    const angle = angleAt(p[tip], p[pip], p[mcp]);
+    const e1 = clamp((reach - 1.15) / 0.55);
+    const e2 = clamp((angle - 110) / 55);
+    return e1 * 0.5 + e2 * 0.5;
+  };
+
+  const ext = [
+    fingerExt(8, 6, 5),
+    fingerExt(12, 10, 9),
+    fingerExt(16, 14, 13),
+    fingerExt(20, 18, 17),
+  ];
+
+  const thumbOut = clamp((n(4, 5) - 0.45) / 0.55);
+  const thumbIn = 1 - thumbOut;
+
+  const ti = n(4, 8);
+  const tm = n(4, 12);
+  const im = n(8, 12);
+  const mr = n(12, 16);
+  const tipsToThumb = (n(8, 4) + n(12, 4) + n(16, 4) + n(20, 4)) / 4;
+
+  const lo = (v: number, max: number) => clamp(1 - (v - max) / 0.5);
+  const hi = (v: number, min: number) => clamp(1 - (min - v) / 0.5);
+
+  type Template = {
+    fingers: [number, number, number, number];
+    thumb?: "out" | "in";
+    extra?: number;
+    motion?: boolean;
+  };
+
+  const T: Record<string, Template> = {
+    A: { fingers: [0, 0, 0, 0], thumb: "out" },
+    B: { fingers: [1, 1, 1, 1], thumb: "in" },
+    C: {
+      fingers: [0.5, 0.5, 0.5, 0.5],
+      thumb: "out",
+      extra: clamp(1 - Math.abs(ti - 0.8) / 0.8),
+    },
+    D: { fingers: [1, 0, 0, 0], extra: lo(tm, 0.6) },
+    E: { fingers: [0, 0, 0, 0], thumb: "in" },
+    F: { fingers: [0.1, 1, 1, 1], extra: lo(ti, 0.45) },
+    G: { fingers: [1, 0, 0, 0], thumb: "out" },
+    H: { fingers: [1, 1, 0, 0], extra: lo(im, 0.35) },
+    I: { fingers: [0, 0, 0, 1], thumb: "in" },
+    J: { fingers: [0, 0, 0, 1], motion: true },
+    K: { fingers: [1, 1, 0, 0], extra: hi(im, 0.3) },
+    L: { fingers: [1, 0, 0, 0], thumb: "out", extra: hi(ti, 0.7) },
+    M: { fingers: [0, 0, 0, 0], thumb: "in" },
+    N: { fingers: [0, 0, 0, 0], thumb: "in" },
+    O: { fingers: [0.4, 0.4, 0.4, 0.4], extra: lo(tipsToThumb, 0.6) },
+    P: { fingers: [1, 1, 0, 0], extra: hi(im, 0.25) },
+    Q: { fingers: [1, 0, 0, 0], thumb: "out" },
+    R: { fingers: [1, 1, 0, 0], extra: lo(im, 0.3) },
+    S: { fingers: [0, 0, 0, 0] },
+    T: { fingers: [0, 0, 0, 0] },
+    U: { fingers: [1, 1, 0, 0], extra: lo(im, 0.35) },
+    V: { fingers: [1, 1, 0, 0], extra: hi(im, 0.35) },
+    W: { fingers: [1, 1, 1, 0], extra: hi(Math.min(im, mr), 0.25) },
+    X: { fingers: [0.45, 0, 0, 0] },
+    Y: { fingers: [0, 0, 0, 1], thumb: "out" },
+    Z: { fingers: [1, 0, 0, 0], motion: true },
+  };
+
+  const scoreLetter = (letter: string) => {
+    const t = T[letter];
+    let sum = 0;
+    let weight = 0;
+
+    t.fingers.forEach((want, i) => {
+      sum += clamp(1 - Math.abs(ext[i] - want) * 1.2);
+      weight += 1;
+    });
+
+    if (t.thumb) {
+      sum += (t.thumb === "out" ? thumbOut : thumbIn) * 0.5 + 0.5;
+      weight += 0.7;
+    }
+    if (t.extra !== undefined) {
+      sum += 0.3 + t.extra * 0.7;
+      weight += 0.7;
+    }
+
+    let s = sum / weight;
+
+    if (t.motion) {
+      const moved =
+        letter === "J"
+          ? looksLikeJPath(jMovementPath)
+          : looksLikeZPath(movementPath);
+      s = moved ? Math.min(1, s + 0.15) : s * 0.97;
+    }
+    return s;
+  };
+
+  const all = Object.keys(T)
+    .map((letter) => ({ letter, score: scoreLetter(letter) }))
+    .sort((a, b) => b.score - a.score);
+
+  const targetScore = scoreLetter(targetSign);
+  const best = all[0];
+  const rank = all.findIndex((x) => x.letter === targetSign);
+
+  const groups = [
+    ["A", "E", "M", "N", "S", "T"],
+    ["G", "Q"],
+    ["K", "P"],
+    ["H", "U", "R", "V"],
+    ["D", "X", "Z", "L"],
+    ["I", "J"],
+    ["O", "C"],
+    ["B", "F"],
+  ];
+  const sameGroup = groups.some(
+    (g) => g.includes(targetSign) && g.includes(best.letter)
+  );
+
+  const accepted =
+    targetScore >= 0.62 ||
+    (rank <= 2 && targetScore >= 0.5) ||
+    (sameGroup && targetScore >= 0.45) ||
+    (T[targetSign].motion && targetScore >= 0.55);
+
+  if (accepted) {
+    return {
+      letter: targetSign,
+      confidence: Math.min(0.95, 0.6 + targetScore * 0.35),
+    };
+  }
+
+  return { letter: best.letter, confidence: Math.min(0.68, best.score * 0.7) };
+}
+
+/* =========================================================
+   MAIN COMPONENT
 ========================================================= */
 
 export default function DashboardPage() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const processingCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const handsRef = useRef<any>(null);
   const animationRef = useRef<number | null>(null);
-  const cvLoadedRef = useRef(false);
+  const lastProcessRef = useRef(0);
+  const movementPathRef = useRef<HandPoint[]>([]);
+  const jMovementPathRef = useRef<HandPoint[]>([]);
 
-  const [cameraActive, setCameraActive] = useState(false);
-  const [cameraError, setCameraError] = useState("");
-  const [mirror, setMirror] = useState(true);
-  const [fullscreen, setFullscreen] = useState(false);
-  const [mobileMenu, setMobileMenu] = useState(false);
-  const [activeNav, setActiveNav] = useState("Dashboard");
-  const [opencvStatus, setOpencvStatus] =
-    useState("Loading vision engine");
-  const [visionFPS, setVisionFPS] = useState(0);
-  const [sessionSeconds, setSessionSeconds] = useState(0);
+  const lastLandmarksRef = useRef<HandPoint[]>([]);
+
+  const captureResolveRef = useRef<
+    ((landmarks: HandPoint[]) => void) | null
+  >(null);
+
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [targetSign, setTargetSign] = useState("A");
-  const [practiceScore, setPracticeScore] = useState(0);
-  const [detected, setDetected] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [handDetected, setHandDetected] = useState(false);
+  const [handLandmarks, setHandLandmarks] = useState<HandPoint[]>([]);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const [result, setResult] = useState<GestureResult | null>(null);
+  const [cameraError, setCameraError] = useState("");
+  const [imageError, setImageError] = useState(false);
+  const [sessionTime, setSessionTime] = useState(0);
+  const [activeSection, setActiveSection] = useState("Practice");
+
+  const [attempts, setAttempts] = useState(0);
+  const [correctAttempts, setCorrectAttempts] = useState(0);
+  const [streak, setStreak] = useState(0);
 
   /* =========================================================
-     LOAD OPENCV
+     LOAD MEDIAPIPE
   ========================================================= */
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    if ((window as any).cv) {
-      cvLoadedRef.current = true;
-      setOpencvStatus("OpenCV ready");
+    if (window.Hands) {
+      initializeHands();
       return;
     }
 
     const existing = document.querySelector(
-      'script[data-opencv="true"]'
+      'script[data-mediapipe-hands="true"]'
     );
 
     if (existing) return;
 
     const script = document.createElement("script");
 
-    script.src = "https://docs.opencv.org/4.x/opencv.js";
-    script.async = true;
-    script.dataset.opencv = "true";
+    script.src = "https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js";
+    script.crossOrigin = "anonymous";
+    script.dataset.mediapipeHands = "true";
 
     script.onload = () => {
-      const waitForCV = () => {
-        if ((window as any).cv) {
-          cvLoadedRef.current = true;
-          setOpencvStatus("OpenCV ready");
-        } else {
-          window.setTimeout(waitForCV, 250);
-        }
-      };
-
-      waitForCV();
-    };
-
-    script.onerror = () => {
-      setOpencvStatus("Vision engine unavailable");
+      initializeHands();
     };
 
     document.body.appendChild(script);
+
+    function initializeHands() {
+      if (!window.Hands || handsRef.current) {
+        return;
+      }
+
+      const hands = new window.Hands({
+        locateFile: (file: string) =>
+          `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`,
+      });
+
+      hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.6,
+        minTrackingConfidence: 0.6,
+      });
+
+      hands.onResults((results: any) => {
+        const landmarks = results.multiHandLandmarks?.[0] || [];
+
+        if (captureResolveRef.current) {
+          const resolve = captureResolveRef.current;
+          captureResolveRef.current = null;
+          resolve(landmarks);
+          return;
+        }
+
+        if (landmarks.length) {
+          setHandDetected(true);
+          setHandLandmarks(landmarks);
+          lastLandmarksRef.current = landmarks;
+
+          const tip = landmarks[8];
+          const path = movementPathRef.current;
+          const previous = path[path.length - 1];
+          if (
+            !previous ||
+            Math.hypot(tip.x - previous.x, tip.y - previous.y) > 0.006
+          ) {
+            path.push({ x: tip.x, y: tip.y, z: tip.z });
+            if (path.length > 160) path.shift();
+          }
+
+          const pinky = landmarks[20];
+          const jPath = jMovementPathRef.current;
+          const previousPinky = jPath[jPath.length - 1];
+          if (
+            !previousPinky ||
+            Math.hypot(pinky.x - previousPinky.x, pinky.y - previousPinky.y) >
+              0.006
+          ) {
+            jPath.push({ x: pinky.x, y: pinky.y, z: pinky.z });
+            if (jPath.length > 160) jPath.shift();
+          }
+        } else {
+          setHandDetected(false);
+          setHandLandmarks([]);
+          lastLandmarksRef.current = [];
+        }
+      });
+
+      handsRef.current = hands;
+    }
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
   }, []);
 
   /* =========================================================
-     CAMERA PROCESSING
+     PROCESS CAMERA
   ========================================================= */
 
-  const processCameraFrame = useCallback(() => {
+  const processFrame = useCallback(async (time: number) => {
     const video = videoRef.current;
-    const canvas = processingCanvasRef.current;
 
-    if (!video || !canvas || video.readyState < 2) {
-      animationRef.current =
-        requestAnimationFrame(processCameraFrame);
-
+    if (!video || !handsRef.current) {
+      animationRef.current = requestAnimationFrame(processFrame);
       return;
     }
 
-    const ctx = canvas.getContext("2d");
-
-    if (!ctx) return;
-
-    const width = 640;
-    const height = 480;
-
-    canvas.width = width;
-    canvas.height = height;
-
-    ctx.save();
-
-    if (mirror) {
-      ctx.translate(width, 0);
-      ctx.scale(-1, 1);
+    if (time - lastProcessRef.current < 50) {
+      animationRef.current = requestAnimationFrame(processFrame);
+      return;
     }
 
-    ctx.drawImage(video, 0, 0, width, height);
+    lastProcessRef.current = time;
 
-    ctx.restore();
-
-    if (cvLoadedRef.current && (window as any).cv) {
+    if (video.readyState >= 2) {
       try {
-        const cv = (window as any).cv;
-
-        const src = cv.imread(canvas);
-        const gray = new cv.Mat();
-
-        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-
-        const mean = cv.mean(gray);
-
-        if (mean && mean[0] > 0) {
-          setVisionFPS((previous) =>
-            previous >= 30 ? 30 : previous + 1
-          );
-        }
-
-        src.delete();
-        gray.delete();
+        await handsRef.current.send({ image: video });
       } catch {
-        /* Keep camera running if CV processing fails. */
+        /* Keep camera alive if a frame fails. */
       }
     }
 
-    animationRef.current =
-      requestAnimationFrame(processCameraFrame);
-  }, [mirror]);
+    animationRef.current = requestAnimationFrame(processFrame);
+  }, []);
 
   /* =========================================================
      START CAMERA
@@ -569,31 +477,22 @@ export default function DashboardPage() {
 
   const startCamera = async () => {
     setCameraError("");
-
-    if (
-      !navigator.mediaDevices ||
-      !navigator.mediaDevices.getUserMedia
-    ) {
-      setCameraError(
-        "Your browser does not support webcam access."
-      );
-      return;
-    }
+    setResult(null);
+    setCapturedImage(null);
 
     try {
-      const stream =
-        await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: {
-              ideal: 1280,
-            },
-            height: {
-              ideal: 720,
-            },
-            facingMode: "user",
-          },
-          audio: false,
-        });
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("Camera access is not supported.");
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: "user",
+        },
+        audio: false,
+      });
 
       streamRef.current = stream;
 
@@ -603,20 +502,14 @@ export default function DashboardPage() {
       }
 
       setCameraActive(true);
-      setSessionSeconds(0);
-      setVisionFPS(0);
+      setSessionTime(0);
 
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-
-      animationRef.current =
-        requestAnimationFrame(processCameraFrame);
+      animationRef.current = requestAnimationFrame(processFrame);
     } catch (error) {
       console.error(error);
 
       setCameraError(
-        "Camera access was blocked. Please allow camera permission in your browser."
+        "Camera access was blocked. Please allow camera permission and try again."
       );
     }
   };
@@ -632,10 +525,7 @@ export default function DashboardPage() {
     }
 
     if (streamRef.current) {
-      streamRef.current
-        .getTracks()
-        .forEach((track) => track.stop());
-
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
 
@@ -644,8 +534,11 @@ export default function DashboardPage() {
     }
 
     setCameraActive(false);
-    setDetected(false);
-    setVisionFPS(0);
+    setHandDetected(false);
+    setHandLandmarks([]);
+    setCountdown(null);
+    setProcessing(false);
+    setCapturedImage(null);
   };
 
   /* =========================================================
@@ -656,7 +549,7 @@ export default function DashboardPage() {
     if (!cameraActive) return;
 
     const interval = window.setInterval(() => {
-      setSessionSeconds((seconds) => seconds + 1);
+      setSessionTime((value) => value + 1);
     }, 1000);
 
     return () => {
@@ -675,109 +568,795 @@ export default function DashboardPage() {
       }
 
       if (streamRef.current) {
-        streamRef.current
-          .getTracks()
-          .forEach((track) => track.stop());
+        streamRef.current.getTracks().forEach((track) => track.stop());
       }
     };
   }, []);
 
   /* =========================================================
-     FULLSCREEN
+     SPEECH
   ========================================================= */
 
-  const toggleFullscreen = async () => {
-    const element =
-      document.getElementById("camera-stage");
+  const pronounceLetter = () => {
+    if (typeof window === "undefined") return;
 
-    if (!element) return;
+    window.speechSynthesis.cancel();
 
-    if (!document.fullscreenElement) {
-      await element.requestFullscreen?.();
-      setFullscreen(true);
+    const speech = new SpeechSynthesisUtterance(targetSign);
+
+    speech.rate = 0.75;
+    speech.pitch = 1;
+    speech.volume = 1;
+
+    window.speechSynthesis.speak(speech);
+  };
+
+  /* =========================================================
+     SESSION RESULT TRACKING
+  ========================================================= */
+
+  const registerResult = (nextResult: GestureResult) => {
+    setResult(nextResult);
+    setAttempts((value) => value + 1);
+
+    if (nextResult.status === "correct") {
+      setCorrectAttempts((value) => value + 1);
+      setStreak((value) => value + 1);
     } else {
-      await document.exitFullscreen?.();
-      setFullscreen(false);
+      setStreak(0);
+    }
+  };
+
+  const sessionAccuracy = attempts
+    ? Math.round((correctAttempts / attempts) * 100)
+    : 0;
+
+  /* =========================================================
+     CAPTURE + CHECK
+  ========================================================= */
+
+  const captureGesture = async (skipCountdown = false) => {
+    if (processing || !cameraActive) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (!video || !canvas || !handsRef.current) {
+      return;
+    }
+
+    setProcessing(true);
+    setResult(null);
+    setCapturedImage(null);
+
+    try {
+      if (!skipCountdown) {
+        for (let i = 6; i >= 1; i--) {
+          setCountdown(i);
+
+          await new Promise<void>((resolve) => {
+            window.setTimeout(resolve, 1000);
+          });
+        }
+      }
+
+      setCountdown(0);
+
+      if (
+        video.readyState < 2 ||
+        video.videoWidth === 0 ||
+        video.videoHeight === 0
+      ) {
+        throw new Error("Camera frame is not ready.");
+      }
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const context = canvas.getContext("2d");
+
+      if (!context) {
+        throw new Error("Could not access capture canvas.");
+      }
+
+      context.save();
+      context.translate(canvas.width, 0);
+      context.scale(-1, 1);
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      context.restore();
+
+      const capturedDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+
+      setCapturedImage(capturedDataUrl);
+
+      const capturedLandmarks = await new Promise<HandPoint[]>((resolve) => {
+        captureResolveRef.current = resolve;
+
+        handsRef.current.send({ image: canvas }).catch(() => {
+          captureResolveRef.current = null;
+          resolve([]);
+        });
+      });
+
+      const landmarksToUse = capturedLandmarks.length
+        ? capturedLandmarks
+        : lastLandmarksRef.current;
+
+      if (!landmarksToUse.length) {
+        registerResult({
+          status: "incorrect",
+          letter: "?",
+          confidence: 0,
+        });
+        return;
+      }
+
+      const prediction = classifyGesture(
+        landmarksToUse,
+        targetSign,
+        movementPathRef.current,
+        jMovementPathRef.current
+      );
+
+      registerResult({
+        status: prediction.letter === targetSign ? "correct" : "incorrect",
+        letter: prediction.letter,
+        confidence: prediction.confidence,
+      });
+    } catch (error) {
+      console.error("Automatic gesture capture failed:", error);
+
+      registerResult({
+        status: "incorrect",
+        letter: "?",
+        confidence: 0,
+      });
+    } finally {
+      captureResolveRef.current = null;
+      setCountdown(null);
+      setProcessing(false);
     }
   };
 
   /* =========================================================
-     HELPERS
+     AUTOMATIC PRACTICE
   ========================================================= */
 
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, "0");
+  useEffect(() => {
+    if (!cameraActive) return;
 
-    const remaining = (seconds % 60)
-      .toString()
-      .padStart(2, "0");
+    const timer = window.setTimeout(() => {
+      captureGesture();
+    }, 1200);
 
-    return `${minutes}:${remaining}`;
-  };
+    return () => {
+      window.clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraActive]);
 
-  const scrollToPractice = () => {
-    document
-      .getElementById("practice")
-      ?.scrollIntoView({
-        behavior: "smooth",
-      });
-  };
+  /* =========================================================
+     AUTOMATIC HAND -> 6 SECOND COUNTDOWN -> CAPTURE
+  ========================================================= */
 
-  const changeSign = () => {
-    const currentIndex =
-      alphabet.indexOf(targetSign);
-
-    const next =
-      alphabet[
-        (currentIndex + 1) %
-          alphabet.length
-      ];
-
-    setTargetSign(next);
-    setDetected(false);
-    setPracticeScore(0);
-  };
-
-  const handlePractice = () => {
-    if (!cameraActive) {
-      startCamera();
+  useEffect(() => {
+    if (!cameraActive || !handDetected || processing || result) {
       return;
     }
 
-    setDetected(true);
+    let cancelled = false;
+    let timer: number | null = null;
 
-    setPracticeScore((score) =>
-      Math.min(score + 8, 100)
+    const runCountdown = async () => {
+      setCapturedImage(null);
+      movementPathRef.current = [];
+      jMovementPathRef.current = [];
+      setCountdown(6);
+
+      for (let value = 6; value >= 1; value--) {
+        if (cancelled) return;
+
+        setCountdown(value);
+
+        await new Promise<void>((resolve) => {
+          timer = window.setTimeout(resolve, 1000);
+        });
+      }
+
+      if (cancelled) return;
+
+      if (!handDetected) {
+        setCountdown(null);
+        return;
+      }
+
+      await captureGesture(true);
+    };
+
+    void runCountdown();
+
+    return () => {
+      cancelled = true;
+      if (timer !== null) {
+        window.clearTimeout(timer);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraActive, handDetected, targetSign, result]);
+
+  /* =========================================================
+     CHANGE LETTER
+  ========================================================= */
+
+  const selectLetter = (letter: string) => {
+    setTargetSign(letter);
+    setResult(null);
+    setCapturedImage(null);
+    setImageError(false);
+    movementPathRef.current = [];
+    jMovementPathRef.current = [];
+
+    if (cameraActive && videoRef.current && streamRef.current) {
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+
+      void videoRef.current.play().catch(() => {});
+    }
+  };
+
+  const nextLetter = () => {
+    const index = ALPHABET.indexOf(targetSign);
+    const next = ALPHABET[(index + 1) % ALPHABET.length];
+    selectLetter(next);
+  };
+
+  const previousLetter = () => {
+    const index = ALPHABET.indexOf(targetSign);
+    const previous = ALPHABET[(index - 1 + ALPHABET.length) % ALPHABET.length];
+    selectLetter(previous);
+  };
+
+  /* =========================================================
+     FORMAT TIME
+  ========================================================= */
+
+  const formattedTime = `${Math.floor(sessionTime / 60)
+    .toString()
+    .padStart(2, "0")}:${(sessionTime % 60).toString().padStart(2, "0")}`;
+
+  /* =========================================================
+     RESULT UI
+  ========================================================= */
+
+  const renderResult = () => {
+    if (!result) return null;
+
+    if (result.status === "correct") {
+      return (
+        <div className="result-card result-correct">
+          <div className="result-icon">✓</div>
+
+          <div>
+            <strong>Correct gesture</strong>
+
+            <span>
+              You signed {targetSign} correctly. Detection confidence{" "}
+              {Math.round(result.confidence * 100)}%.
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="result-card result-wrong">
+        <div className="result-icon">×</div>
+
+        <div>
+          <strong>Wrong gesture</strong>
+
+          <span>
+            {result.letter === "?" ? (
+              <>
+                No matching gesture was found, but the target is{" "}
+                <b>{targetSign}</b>.
+              </>
+            ) : (
+              <>
+                The captured gesture looks like <b>{result.letter}</b>, but the
+                target is <b>{targetSign}</b>.
+              </>
+            )}
+          </span>
+        </div>
+      </div>
     );
   };
 
-  const navigation = [
-    {
-      label: "Dashboard",
-      icon: "grid" as IconName,
-    },
-    {
-      label: "Learn",
-      icon: "book" as IconName,
-    },
-    {
-      label: "Practice",
-      icon: "camera" as IconName,
-    },
-    {
-      label: "Quiz",
-      icon: "brain" as IconName,
-    },
-    {
-      label: "Progress",
-      icon: "chart" as IconName,
-    },
-  ];
+  /* =========================================================
+     NAVIGATION
+  ========================================================= */
+
+  const introRef = useRef<HTMLElement | null>(null);
+  const workspaceRef = useRef<HTMLElement | null>(null);
+  const alphabetRef = useRef<HTMLElement | null>(null);
+  const resultRef = useRef<HTMLDivElement | null>(null);
+  const accuracyRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (result && resultRef.current) {
+      resultRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [result]);
+
+  const handleNavigation = (item: string) => {
+    setActiveSection(item);
+
+    const target =
+      item === "Learn"
+        ? document.querySelector(".reference-panel")
+        : item === "Practice"
+        ? workspaceRef.current
+        : item === "Alphabet"
+        ? alphabetRef.current
+        : item === "Accuracy"
+        ? accuracyRef.current
+        : workspaceRef.current;
+
+    if (target) {
+      target.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }
+  };
+
+  /* =========================================================
+     UI
+  ========================================================= */
 
   return (
-    <>
+    <main className="app">
+      <div className="background-glow glow-one" />
+      <div className="background-glow glow-two" />
+      <div className="background-glow glow-three" />
+
+      {/* SIDEBAR */}
+
+      <aside className="sidebar">
+        <div className="brand">
+          <div className="brand-mark">S</div>
+
+          <div>
+            <strong>SignLearn</strong>
+            <span>Learn through signs</span>
+          </div>
+        </div>
+
+        <nav className="navigation">
+          {["Learn", "Practice", "Alphabet", "Accuracy"].map((item) => (
+            <button
+              key={item}
+              className={activeSection === item ? "nav-item active" : "nav-item"}
+              onClick={() => handleNavigation(item)}
+            >
+              <span className="nav-dot" />
+              {item}
+            </button>
+          ))}
+        </nav>
+
+        <div className="sidebar-bottom">
+          <div className="mini-profile">
+            <div className="avatar">A</div>
+
+            <div>
+              <strong>Student</strong>
+              <span>Beginner level</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* MAIN */}
+
+      <section className="main">
+        <header className="topbar">
+          <div>
+            <p className="eyebrow">PRACTICE SESSION</p>
+            <h1>Learn sign language</h1>
+          </div>
+
+          <div className="session-pill">
+            <span className="live-dot" />
+            <span>{formattedTime}</span>
+          </div>
+        </header>
+
+        <div className="content">
+          {/* INTRO */}
+
+          <section ref={introRef} className="intro">
+            <div>
+              <p className="section-label">ASL ALPHABET</p>
+
+              <h2>
+                Practice one sign
+                <br />
+                at a time.
+              </h2>
+
+              <p className="intro-text">
+                Look at the reference, make the same handshape, then let the
+                camera check your gesture.
+              </p>
+            </div>
+
+            <div className="target-chip">
+              <span>Current sign</span>
+              <strong>{targetSign}</strong>
+            </div>
+          </section>
+
+          {/* WORKSPACE */}
+
+          <section ref={workspaceRef} className="workspace">
+            {/* REFERENCE */}
+
+            <div className="reference-panel">
+              <div className="panel-header">
+                <div>
+                  <span className="small-label">REFERENCE</span>
+                  <h3>Sign for {targetSign}</h3>
+                </div>
+
+                <button
+                  className="sound-button"
+                  onClick={pronounceLetter}
+                  title="Pronounce letter"
+                >
+                  Speaker
+                </button>
+              </div>
+
+              <div className="reference-image">
+                {!imageError ? (
+                  <img
+                    src={SIGN_IMAGES[targetSign]}
+                    alt={`ASL sign for ${targetSign}`}
+                    onError={() => setImageError(true)}
+                  />
+                ) : (
+                  <div className="image-fallback">
+                    <div className="fallback-letter">{targetSign}</div>
+                    <span>ASL sign {targetSign}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="reference-footer">
+                <div>
+                  <span>Target</span>
+                  <strong>{LETTER_NAMES[targetSign]}</strong>
+                </div>
+
+                <div className="letter-navigation">
+                  <span>Navigate</span>
+
+                  <div className="letter-nav-buttons">
+                    <button
+                      onClick={previousLetter}
+                      className="next-button"
+                      title="Previous sign"
+                    >
+                      Previous
+                    </button>
+
+                    <button
+                      onClick={nextLetter}
+                      className="next-button"
+                      title="Next sign"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* CAMERA */}
+
+            <div className="camera-panel">
+              <div className="camera-header">
+                <div>
+                  <span className="small-label">LIVE CAMERA</span>
+                  <h3>Match the handshape</h3>
+                </div>
+
+                <div
+                  className={
+                    handDetected ? "detection-status detected" : "detection-status"
+                  }
+                >
+                  <span className="status-dot" />
+                  {handDetected ? "Hand detected" : "Hand not detected"}
+                </div>
+              </div>
+
+              <div className="camera-stage">
+                <video
+                  ref={videoRef}
+                  muted
+                  playsInline
+                  autoPlay
+                  className="camera-video"
+                />
+
+                {capturedImage && (
+                  <img
+                    src={capturedImage}
+                    alt="Automatically captured gesture preview"
+                    className="camera-video captured-preview"
+                  />
+                )}
+
+                {!cameraActive && (
+                  <div className="camera-empty">
+                    <div className="camera-empty-title">Camera ready</div>
+
+                    <p>Start your camera to practice the sign.</p>
+
+                    <button className="primary-button" onClick={startCamera}>
+                      Start camera
+                    </button>
+                  </div>
+                )}
+
+                {cameraActive && (
+                  <>
+                    <div
+                      className={handDetected ? "hand-frame visible" : "hand-frame"}
+                    />
+
+                    <div className="camera-corner top-left" />
+                    <div className="camera-corner top-right" />
+                    <div className="camera-corner bottom-left" />
+                    <div className="camera-corner bottom-right" />
+
+                    <div className="camera-status-overlay">
+                      <span>
+                        {processing
+                          ? "Checking gesture..."
+                          : countdown !== null
+                          ? "Hold your hand steady"
+                          : handDetected
+                          ? "Hand detected — preparing capture"
+                          : "Place your hand inside the frame"}
+                      </span>
+                    </div>
+
+                    {countdown !== null && countdown > 0 && (
+                      <div className="countdown">{countdown}</div>
+                    )}
+
+                    {countdown === 0 && (
+                      <div className="capture-label">Checking gesture</div>
+                    )}
+
+                    {result && countdown === null && (
+                      <div
+                        className={`result-overlay result-overlay-${result.status}`}
+                      >
+                        <div className="result-overlay-icon">
+                          {result.status === "correct" ? "✓" : "×"}
+                        </div>
+
+                        <div>
+                          <strong>
+                            {result.status === "correct"
+                              ? "Correct gesture!"
+                              : "Wrong gesture"}
+                          </strong>
+
+                          <span>
+                            {result.status === "correct"
+                              ? `You signed ${targetSign}`
+                              : result.letter === "?"
+                              ? `No match, target is ${targetSign}`
+                              : `Looks like ${result.letter}, target is ${targetSign}`}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {cameraError && <div className="camera-error">{cameraError}</div>}
+
+              <div className="camera-controls">
+                {!cameraActive ? (
+                  <button className="primary-button" onClick={startCamera}>
+                    Start camera
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      className="capture-button"
+                      disabled={processing}
+                      onClick={() => {
+                        setResult(null);
+                        setCapturedImage(null);
+                        setCountdown(null);
+                      }}
+                    >
+                      {processing ? "Checking..." : "Retry sign"}
+                    </button>
+
+                    <button
+                      className="secondary-button"
+                      disabled={processing}
+                      onClick={nextLetter}
+                    >
+                      Next sign
+                    </button>
+
+                    <button
+                      className="secondary-button"
+                      disabled={processing}
+                      onClick={stopCamera}
+                    >
+                      Stop
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* RESULT */}
+
+          <div ref={resultRef}>
+            {renderResult()}
+
+            {result && (
+              <div className="result-actions">
+                <button
+                  className="action-button primary-action"
+                  disabled={processing || !cameraActive}
+                  onClick={() => {
+                    setResult(null);
+                    setCapturedImage(null);
+                    setCountdown(null);
+                  }}
+                >
+                  Retry sign
+                </button>
+
+                <button
+                  className="action-button"
+                  disabled={processing}
+                  onClick={nextLetter}
+                >
+                  Next sign
+                </button>
+
+                <button
+                  className="action-button"
+                  onClick={() =>
+                    document.querySelector(".reference-panel")?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    })
+                  }
+                >
+                  Review reference
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* ACCURACY */}
+
+          <section ref={accuracyRef} className="accuracy-section">
+            <div className="accuracy-header">
+              <div>
+                <span className="small-label">SESSION ACCURACY</span>
+                <h3>Your practice results</h3>
+              </div>
+
+              <button
+                className="reset-stats-button"
+                onClick={() => {
+                  setAttempts(0);
+                  setCorrectAttempts(0);
+                  setStreak(0);
+                }}
+              >
+                Reset stats
+              </button>
+            </div>
+
+            <div className="accuracy-grid">
+              <div className="accuracy-card featured">
+                <span>Accuracy</span>
+                <strong>{sessionAccuracy}%</strong>
+                <small>Across this session</small>
+              </div>
+
+              <div className="accuracy-card">
+                <span>Correct</span>
+                <strong>{correctAttempts}</strong>
+                <small>Signs matched</small>
+              </div>
+
+              <div className="accuracy-card">
+                <span>Attempts</span>
+                <strong>{attempts}</strong>
+                <small>Total checks</small>
+              </div>
+
+              <div className="accuracy-card">
+                <span>Streak</span>
+                <strong>{streak}</strong>
+                <small>Correct in a row</small>
+              </div>
+            </div>
+          </section>
+
+          {/* ALPHABET */}
+
+          <section ref={alphabetRef} className="alphabet-section">
+            <div className="alphabet-heading">
+              <div>
+                <span className="small-label">ALPHABET</span>
+                <h3>Choose a letter</h3>
+              </div>
+
+              <span className="alphabet-count">{ALPHABET.length} signs</span>
+            </div>
+
+            <div className="alphabet-grid">
+              {ALPHABET.map((letter) => (
+                <button
+                  key={letter}
+                  className={
+                    targetSign === letter ? "letter-card selected" : "letter-card"
+                  }
+                  onClick={() => selectLetter(letter)}
+                >
+                  <img src={SIGN_IMAGES[letter]} alt={`Sign ${letter}`} />
+                  <span>{letter}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* TIP */}
+
+          <section className="tip">
+            <div className="tip-line" />
+
+            <div>
+              <strong>Practice tip</strong>
+
+              <p>
+                Keep your entire hand visible, use good lighting and keep the
+                palm orientation similar to the reference image.
+              </p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <canvas ref={canvasRef} style={{ display: "none" }} />
+
+      {/* STYLES */}
+
       <style jsx global>{`
         * {
           box-sizing: border-box;
@@ -789,2825 +1368,1221 @@ export default function DashboardPage() {
 
         body {
           margin: 0;
-          font-family:
-            Inter,
-            ui-sans-serif,
-            -apple-system,
-            BlinkMacSystemFont,
-            "Segoe UI",
-            Roboto,
-            Helvetica,
-            Arial,
-            sans-serif;
-          color: #202617;
-          background:
-            radial-gradient(
-              circle at 12% 8%,
-              rgba(219, 237, 135, 0.65),
-              transparent 30%
-            ),
-            radial-gradient(
-              circle at 90% 15%,
-              rgba(195, 220, 111, 0.42),
-              transparent 27%
-            ),
-            linear-gradient(
-              135deg,
-              #f3f7e3 0%,
-              #e8efc5 45%,
-              #f5f8e9 100%
-            );
-        }
-
-        button,
-        input {
-          font: inherit;
+          background: #071126;
+          color: #f6f7ff;
+          font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont,
+            "Segoe UI", sans-serif;
+          -webkit-font-smoothing: antialiased;
+          text-rendering: optimizeLegibility;
         }
 
         button {
-          border: 0;
+          font: inherit;
         }
 
-        .dashboard-page {
+        button:focus-visible {
+          outline: 2px solid #bca7ff;
+          outline-offset: 3px;
+        }
+
+        .app {
           min-height: 100vh;
           display: flex;
           position: relative;
           overflow-x: hidden;
+          background: radial-gradient(
+              circle at 76% 10%,
+              rgba(116, 83, 203, 0.18),
+              transparent 27%
+            ),
+            radial-gradient(
+              circle at 35% 72%,
+              rgba(75, 104, 203, 0.12),
+              transparent 28%
+            ),
+            #071126;
         }
 
-        /* =====================================================
-           AMBIENT
-        ===================================================== */
-
-        .ambient {
+        .background-glow {
           position: fixed;
           pointer-events: none;
           border-radius: 999px;
-          filter: blur(60px);
-          z-index: 0;
+          filter: blur(100px);
+          opacity: 0.4;
         }
 
-        .ambient-one {
-          width: 330px;
-          height: 330px;
-          top: -100px;
-          left: 20%;
-          background: rgba(213, 235, 119, 0.3);
-        }
-
-        .ambient-two {
-          width: 280px;
-          height: 280px;
-          right: 8%;
-          top: 35%;
-          background: rgba(189, 220, 100, 0.22);
-        }
-
-        .ambient-three {
+        .glow-one {
           width: 300px;
           height: 300px;
-          bottom: -100px;
-          left: 15%;
-          background: rgba(224, 239, 165, 0.55);
+          background: #6e50c9;
+          top: -140px;
+          right: 18%;
         }
 
-        .ambient-four {
-          width: 220px;
-          height: 220px;
-          right: 25%;
-          bottom: 8%;
-          background: rgba(201, 224, 117, 0.18);
+        .glow-two {
+          width: 260px;
+          height: 260px;
+          background: #315eb6;
+          bottom: 5%;
+          left: 20%;
         }
 
-        /* =====================================================
-           SIDEBAR
-        ===================================================== */
+        .glow-three {
+          width: 180px;
+          height: 180px;
+          background: #9b79e8;
+          top: 45%;
+          right: -80px;
+        }
+
+        /* SIDEBAR */
 
         .sidebar {
           position: fixed;
-          z-index: 50;
-          top: 18px;
-          left: 18px;
-          bottom: 18px;
-          width: 248px;
+          z-index: 20;
+          top: 20px;
+          left: 20px;
+          bottom: 20px;
+          width: 230px;
           padding: 22px 14px;
-          border: 1px solid rgba(255, 255, 255, 0.82);
-          border-radius: 28px;
-          background:
-            linear-gradient(
-              145deg,
-              rgba(255, 255, 255, 0.72),
-              rgba(239, 246, 207, 0.48)
-            );
-          backdrop-filter: blur(32px) saturate(160%);
-          -webkit-backdrop-filter: blur(32px) saturate(160%);
-          box-shadow:
-            0 25px 60px rgba(77, 91, 33, 0.11),
-            inset 0 1px 0 rgba(255, 255, 255, 0.95);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 26px;
+          background: linear-gradient(
+            145deg,
+            rgba(20, 34, 68, 0.88),
+            rgba(12, 24, 51, 0.72)
+          );
+          backdrop-filter: blur(28px);
+          -webkit-backdrop-filter: blur(28px);
+          box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28),
+            inset 0 1px 0 rgba(255, 255, 255, 0.06);
           display: flex;
           flex-direction: column;
         }
 
-        .sidebar-brand {
+        .brand {
           display: flex;
           align-items: center;
           gap: 11px;
-          padding: 3px 8px 22px;
+          padding: 4px 8px 30px;
         }
 
-        .brand-logo {
-          width: 39px;
-          height: 39px;
-          flex: 0 0 39px;
+        .brand-mark {
+          width: 40px;
+          height: 40px;
+          border-radius: 13px;
           display: grid;
           place-items: center;
-          border-radius: 13px;
-          background: linear-gradient(
-            145deg,
-            #dbe991,
-            #b9cf67
-          );
-          color: #27310e;
+          background: linear-gradient(145deg, #bda9ff, #8063d7);
+          color: white;
           font-size: 17px;
           font-weight: 750;
-          box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.8),
-            0 8px 20px rgba(108, 127, 44, 0.16);
+          box-shadow: 0 10px 25px rgba(122, 89, 208, 0.3);
         }
 
-        .sidebar-brand strong {
+        .brand strong {
           display: block;
           font-size: 15px;
-          line-height: 1.2;
-          font-weight: 750;
           letter-spacing: -0.02em;
         }
 
-        .sidebar-brand span {
+        .brand span {
           display: block;
           margin-top: 3px;
-          color: #727a61;
+          color: #8994b0;
           font-size: 11px;
-          font-weight: 500;
         }
 
-        .profile-mini {
+        .navigation {
           display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 12px;
-          border: 1px solid rgba(255, 255, 255, 0.72);
-          border-radius: 17px;
-          background: rgba(255, 255, 255, 0.36);
-          margin-bottom: 20px;
-        }
-
-        .profile-avatar,
-        .top-avatar {
-          display: grid;
-          place-items: center;
-          border-radius: 50%;
-          background: #26300f;
-          color: #edf6c4;
-          font-weight: 700;
-        }
-
-        .profile-avatar {
-          width: 35px;
-          height: 35px;
-          font-size: 13px;
-        }
-
-        .profile-info {
-          min-width: 0;
-          flex: 1;
-        }
-
-        .profile-info strong {
-          display: block;
-          font-size: 12px;
-          font-weight: 650;
-        }
-
-        .profile-info span {
-          display: block;
-          margin-top: 2px;
-          color: #7c826d;
-          font-size: 11px;
-        }
-
-        .sidebar-nav {
-          flex: 1;
-          overflow-y: auto;
-        }
-
-        .nav-label {
-          display: block;
-          padding: 0 10px 8px;
-          color: #899076;
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.11em;
-          text-transform: uppercase;
-        }
-
-        .nav-label-gap {
-          margin-top: 24px;
+          flex-direction: column;
+          gap: 5px;
         }
 
         .nav-item {
           width: 100%;
-          min-height: 42px;
-          padding: 0 11px;
-          margin-bottom: 4px;
+          height: 44px;
+          padding: 0 13px;
+          border-radius: 13px;
           display: flex;
           align-items: center;
-          gap: 11px;
-          border-radius: 13px;
+          gap: 10px;
+          color: #929db9;
           background: transparent;
-          color: #667055;
           cursor: pointer;
           text-align: left;
           font-size: 13px;
           font-weight: 550;
-          transition:
-            background 180ms ease,
-            color 180ms ease,
-            transform 180ms ease;
+          transition: background 0.2s ease, color 0.2s ease,
+            transform 0.2s ease;
         }
 
         .nav-item:hover {
-          background: rgba(255, 255, 255, 0.5);
-          color: #252d17;
-          transform: translateX(2px);
+          color: white;
+          background: rgba(255, 255, 255, 0.055);
         }
 
         .nav-item.active {
-          background: rgba(255, 255, 255, 0.78);
-          color: #26310e;
-          font-weight: 650;
-          box-shadow:
-            inset 0 0 0 1px rgba(255, 255, 255, 0.6),
-            0 5px 15px rgba(72, 87, 31, 0.06);
+          color: white;
+          background: linear-gradient(
+            90deg,
+            rgba(154, 125, 230, 0.2),
+            rgba(154, 125, 230, 0.08)
+          );
         }
 
-        .nav-live {
-          margin-left: auto;
-          padding: 3px 6px;
-          border-radius: 6px;
-          background: #dbe991;
-          color: #394512;
-          font-size: 8px;
-          font-weight: 800;
-          letter-spacing: 0.08em;
+        .nav-dot {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background: #687590;
+        }
+
+        .nav-item.active .nav-dot {
+          background: #bca7ff;
+          box-shadow: 0 0 12px #bca7ff;
         }
 
         .sidebar-bottom {
-          padding-top: 14px;
-          border-top: 1px solid rgba(104, 117, 70, 0.12);
+          margin-top: auto;
         }
 
-        .privacy-card {
+        .mini-profile {
+          padding: 10px;
+          border-radius: 15px;
+          background: rgba(255, 255, 255, 0.045);
+          border: 1px solid rgba(255, 255, 255, 0.06);
           display: flex;
           align-items: center;
-          gap: 9px;
-          padding: 11px;
-          margin-bottom: 10px;
-          border-radius: 14px;
-          background: rgba(230, 240, 190, 0.5);
+          gap: 10px;
         }
 
-        .privacy-icon {
-          width: 30px;
-          height: 30px;
+        .avatar {
+          width: 34px;
+          height: 34px;
           display: grid;
           place-items: center;
-          border-radius: 9px;
-          background: rgba(255, 255, 255, 0.68);
-          color: #637528;
-        }
-
-        .privacy-card strong {
-          display: block;
-          font-size: 10px;
+          border-radius: 50%;
+          background: #1b2a4d;
+          color: #c7baff;
           font-weight: 700;
+          font-size: 12px;
         }
 
-        .privacy-card span {
+        .mini-profile strong {
+          display: block;
+          font-size: 12px;
+        }
+
+        .mini-profile span {
           display: block;
           margin-top: 2px;
-          color: #81896d;
-          font-size: 9px;
+          color: #75819d;
+          font-size: 10px;
         }
 
-        /* =====================================================
-           MAIN
-        ===================================================== */
+        /* MAIN */
 
-        .main-area {
-          width: calc(100% - 284px);
-          margin-left: 284px;
+        .main {
+          width: calc(100% - 270px);
+          margin-left: 270px;
           position: relative;
           z-index: 1;
         }
 
         .topbar {
-          height: 72px;
-          margin: 18px 24px 0;
-          padding: 0 18px 0 22px;
+          min-height: 104px;
+          padding: 27px 42px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          border: 1px solid rgba(255, 255, 255, 0.78);
-          border-radius: 20px;
-          background: rgba(255, 255, 255, 0.48);
-          backdrop-filter: blur(28px) saturate(150%);
-          -webkit-backdrop-filter: blur(28px) saturate(150%);
-          box-shadow:
-            0 12px 35px rgba(77, 91, 33, 0.07),
-            inset 0 1px 0 rgba(255, 255, 255, 0.9);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+          background: rgba(7, 17, 38, 0.45);
+          backdrop-filter: blur(18px);
+          -webkit-backdrop-filter: blur(18px);
+          position: sticky;
+          top: 0;
+          z-index: 10;
         }
 
-        .breadcrumb {
-          display: flex;
-          align-items: center;
-          gap: 7px;
-          color: #8b927c;
-          font-size: 12px;
-          font-weight: 500;
+        .eyebrow,
+        .section-label,
+        .small-label {
+          margin: 0;
+          color: #9d8bd7;
+          font-size: 10px;
+          letter-spacing: 0.14em;
+          font-weight: 700;
         }
 
-        .breadcrumb strong {
-          color: #343d22;
+        .topbar h1 {
+          margin: 5px 0 0;
+          font-size: 24px;
+          line-height: 1.15;
+          letter-spacing: -0.035em;
           font-weight: 650;
         }
 
-        .topbar-actions {
-          display: flex;
-          align-items: center;
-          gap: 9px;
-        }
-
-        .search-box {
-          width: 235px;
-          height: 38px;
+        .session-pill {
+          padding: 9px 13px;
+          border: 1px solid rgba(255, 255, 255, 0.09);
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.045);
+          color: #aeb9d0;
+          font-size: 12px;
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 0 10px;
-          border: 1px solid rgba(255, 255, 255, 0.75);
-          border-radius: 11px;
-          background: rgba(255, 255, 255, 0.43);
-          color: #8c947b;
         }
 
-        .search-box input {
-          min-width: 0;
-          flex: 1;
-          border: 0;
-          outline: 0;
-          background: transparent;
-          color: #30381f;
-          font-size: 12px;
-        }
-
-        .search-box input::placeholder {
-          color: #9ba18e;
-        }
-
-        .search-box kbd {
-          padding: 2px 5px;
-          border: 1px solid rgba(100, 111, 73, 0.12);
-          border-radius: 5px;
-          color: #969d89;
-          font-size: 9px;
-        }
-
-        .icon-button {
-          width: 38px;
-          height: 38px;
-          display: grid;
-          place-items: center;
-          border: 1px solid rgba(255, 255, 255, 0.76);
-          border-radius: 11px;
-          background: rgba(255, 255, 255, 0.42);
-          color: #65704d;
-          cursor: pointer;
-          transition: all 180ms ease;
-        }
-
-        .icon-button:hover {
-          background: rgba(255, 255, 255, 0.72);
-          color: #2d3719;
-          transform: translateY(-1px);
-        }
-
-        .icon-button.small {
-          width: 31px;
-          height: 31px;
-          border-radius: 9px;
-        }
-
-        .notification-dot {
-          position: absolute;
+        .live-dot {
           width: 6px;
           height: 6px;
-          margin: -20px 0 0 16px;
-          border: 1px solid white;
           border-radius: 50%;
-          background: #9ebc3c;
+          background: #91c9ff;
+          box-shadow: 0 0 10px #91c9ff;
         }
-
-        .top-avatar {
-          width: 36px;
-          height: 36px;
-          font-size: 12px;
-        }
-
-        .mobile-menu-wrap {
-          display: none;
-        }
-
-        /* =====================================================
-           CONTENT
-        ===================================================== */
 
         .content {
-          max-width: 1500px;
+          width: min(1380px, calc(100% - 84px));
           margin: 0 auto;
-          padding: 34px 24px 60px;
+          padding: 48px 0 70px;
         }
 
-        .hero-section {
-          min-height: 190px;
+        /* INTRO */
+
+        .intro {
           display: flex;
           align-items: flex-end;
           justify-content: space-between;
           gap: 30px;
-          padding: 12px 8px 34px;
+          margin-bottom: 32px;
         }
 
-        .eyebrow,
-        .section-kicker {
-          display: flex;
-          align-items: center;
-          gap: 7px;
-          color: #84905d;
-          font-size: 10px;
-          font-weight: 750;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-        }
-
-        .eyebrow-dot,
-        .live-indicator {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #9ebd3e;
-          box-shadow: 0 0 0 4px rgba(158, 189, 62, 0.12);
-        }
-
-        .hero-section h1 {
-          margin: 13px 0 10px;
-          color: #252d18;
-          font-size: clamp(40px, 4vw, 54px);
+        .intro h2 {
+          margin: 10px 0 0;
+          font-size: clamp(34px, 4vw, 48px);
           line-height: 1.02;
-          letter-spacing: -0.045em;
-          font-weight: 750;
-        }
-
-        .hero-section h1 span {
-          color: #829d2e;
-        }
-
-        .hero-section p {
-          max-width: 590px;
-          margin: 0;
-          color: #737b64;
-          font-size: 15px;
-          line-height: 1.65;
-          font-weight: 450;
-        }
-
-        .hero-practice-button,
-        .primary-action,
-        .start-camera {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 9px;
-          border-radius: 12px;
-          cursor: pointer;
-          font-size: 13px;
-          font-weight: 650;
-          transition: all 180ms ease;
-        }
-
-        .hero-practice-button {
-          min-width: 160px;
-          height: 46px;
-          padding: 0 16px;
-          background: #293512;
-          color: #f5f9df;
-          box-shadow: 0 10px 24px rgba(43, 54, 18, 0.17);
-        }
-
-        .hero-practice-button:hover,
-        .primary-action:hover,
-        .start-camera:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 13px 28px rgba(43, 54, 18, 0.2);
-        }
-
-        /* =====================================================
-           STATS
-        ===================================================== */
-
-        .stats-grid {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 12px;
-          margin-bottom: 18px;
-        }
-
-        .stat-card {
-          min-height: 118px;
-          position: relative;
-          overflow: hidden;
-          display: flex;
-          align-items: flex-start;
-          gap: 12px;
-          padding: 19px;
-          border: 1px solid rgba(255, 255, 255, 0.78);
-          border-radius: 18px;
-          background:
-            linear-gradient(
-              145deg,
-              rgba(255, 255, 255, 0.65),
-              rgba(242, 248, 216, 0.43)
-            );
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
-          box-shadow:
-            0 12px 32px rgba(79, 94, 35, 0.065),
-            inset 0 1px 0 rgba(255, 255, 255, 0.9);
-        }
-
-        .stat-icon {
-          width: 37px;
-          height: 37px;
-          display: grid;
-          place-items: center;
-          flex: 0 0 37px;
-          border-radius: 11px;
-          background: rgba(220, 235, 157, 0.65);
-          color: #667c25;
-        }
-
-        .stat-content span {
-          display: block;
-          color: #858d73;
-          font-size: 11px;
-          font-weight: 550;
-        }
-
-        .stat-content strong {
-          display: block;
-          margin-top: 4px;
-          color: #2d351e;
-          font-size: 25px;
-          line-height: 1.1;
-          letter-spacing: -0.035em;
-          font-weight: 720;
-        }
-
-        .stat-content small {
-          display: block;
-          margin-top: 5px;
-          color: #969d88;
-          font-size: 10px;
-          font-weight: 500;
-        }
-
-        .stat-content small.positive {
-          color: #78932d;
-        }
-
-        .stat-decoration {
-          position: absolute;
-          right: 14px;
-          bottom: 8px;
-          color: rgba(128, 153, 47, 0.08);
-          font-size: 36px;
-          font-weight: 800;
-          letter-spacing: -0.08em;
-        }
-
-        .mini-chart {
-          position: absolute;
-          right: 15px;
-          bottom: 17px;
-          height: 34px;
-          display: flex;
-          align-items: flex-end;
-          gap: 4px;
-        }
-
-        .mini-chart span {
-          width: 4px;
-          border-radius: 10px;
-          background: #b7cc6d;
-        }
-
-        .mini-chart span:nth-child(1) {
-          height: 10px;
-        }
-
-        .mini-chart span:nth-child(2) {
-          height: 15px;
-        }
-
-        .mini-chart span:nth-child(3) {
-          height: 13px;
-        }
-
-        .mini-chart span:nth-child(4) {
-          height: 21px;
-        }
-
-        .mini-chart span:nth-child(5) {
-          height: 17px;
-        }
-
-        .mini-chart span:nth-child(6) {
-          height: 28px;
-        }
-
-        .mini-chart span:nth-child(7) {
-          height: 33px;
-        }
-
-        /* =====================================================
-           GLASS PANELS
-        ===================================================== */
-
-        .glass-panel {
-          border: 1px solid rgba(255, 255, 255, 0.8);
-          background:
-            linear-gradient(
-              145deg,
-              rgba(255, 255, 255, 0.7),
-              rgba(239, 247, 207, 0.42)
-            );
-          backdrop-filter: blur(28px) saturate(145%);
-          -webkit-backdrop-filter: blur(28px) saturate(145%);
-          box-shadow:
-            0 16px 45px rgba(75, 91, 33, 0.075),
-            inset 0 1px 0 rgba(255, 255, 255, 0.92);
-        }
-
-        /* =====================================================
-           PRACTICE
-        ===================================================== */
-
-        .practice-layout {
-          display: grid;
-          grid-template-columns: minmax(0, 1.75fr) minmax(280px, 0.75fr);
-          gap: 16px;
-          margin-top: 16px;
-        }
-
-        .camera-card {
-          min-width: 0;
-          padding: 21px;
-          border-radius: 22px;
-        }
-
-        .panel-heading {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 20px;
-          margin-bottom: 16px;
-        }
-
-        .panel-heading h2,
-        .section-header h2,
-        .alphabet-header h2,
-        .activity-card h2,
-        .achievement-card h2 {
-          margin: 6px 0 4px;
-          color: #29321c;
-          font-size: 20px;
-          line-height: 1.2;
-          letter-spacing: -0.025em;
-          font-weight: 700;
-        }
-
-        .panel-heading p,
-        .section-header p,
-        .alphabet-header p {
-          margin: 0;
-          color: #858d75;
-          font-size: 12px;
-          line-height: 1.5;
-        }
-
-        .vision-status {
-          display: flex;
-          align-items: center;
-          gap: 7px;
-          padding: 7px 10px;
-          border: 1px solid rgba(255, 255, 255, 0.7);
-          border-radius: 9px;
-          background: rgba(255, 255, 255, 0.42);
-          color: #78815f;
-          white-space: nowrap;
-          font-size: 10px;
-          font-weight: 550;
-        }
-
-        .vision-status span {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #c1c6b1;
-        }
-
-        .vision-status span.status-online {
-          background: #86a92c;
-          box-shadow: 0 0 0 4px rgba(134, 169, 44, 0.1);
-        }
-
-        .camera-stage {
-          min-height: 470px;
-          position: relative;
-          overflow: hidden;
-          border-radius: 17px;
-          background:
-            radial-gradient(
-              circle at 50% 40%,
-              rgba(105, 128, 39, 0.15),
-              transparent 36%
-            ),
-            #11150d;
-          box-shadow:
-            inset 0 0 0 1px rgba(255, 255, 255, 0.08),
-            0 18px 40px rgba(25, 31, 12, 0.15);
-        }
-
-        .camera-stage:fullscreen {
-          width: 100vw;
-          height: 100vh;
-          border-radius: 0;
-        }
-
-        .camera-video {
-          width: 100%;
-          height: 100%;
-          min-height: 470px;
-          display: block;
-          object-fit: cover;
-        }
-
-        .camera-video.mirrored {
-          transform: scaleX(-1);
-        }
-
-        .processing-canvas {
-          display: none;
-        }
-
-        .camera-placeholder {
-          position: absolute;
-          inset: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-direction: column;
-          padding: 30px;
-          text-align: center;
-          color: white;
-          background:
-            radial-gradient(
-              circle at 50% 40%,
-              rgba(168, 195, 77, 0.13),
-              transparent 30%
-            );
-        }
-
-        .camera-orb {
-          width: 70px;
-          height: 70px;
-          display: grid;
-          place-items: center;
-          border: 1px solid rgba(229, 241, 174, 0.18);
-          border-radius: 21px;
-          background: rgba(226, 239, 171, 0.09);
-          color: #d9e8a5;
-          box-shadow:
-            0 0 45px rgba(162, 191, 75, 0.09),
-            inset 0 1px 0 rgba(255, 255, 255, 0.08);
-        }
-
-        .camera-placeholder h3 {
-          margin: 17px 0 7px;
-          font-size: 20px;
-          font-weight: 650;
-          letter-spacing: -0.02em;
-        }
-
-        .camera-placeholder p {
-          max-width: 330px;
-          margin: 0 0 18px;
-          color: rgba(232, 238, 211, 0.63);
-          font-size: 12px;
-          line-height: 1.6;
-        }
-
-        .start-camera {
-          height: 42px;
-          padding: 0 16px;
-          background: #dceca1;
-          color: #29340e;
-        }
-
-        .camera-error {
-          max-width: 390px;
-          margin-top: 14px;
-          padding: 9px 12px;
-          border: 1px solid rgba(255, 150, 150, 0.18);
-          border-radius: 9px;
-          background: rgba(150, 38, 38, 0.18);
-          color: #ffc4c4;
-          font-size: 11px;
-        }
-
-        .camera-grid {
-          position: absolute;
-          inset: 0;
-          opacity: 0.1;
-          background-image:
-            linear-gradient(
-              rgba(225, 240, 171, 0.3) 1px,
-              transparent 1px
-            ),
-            linear-gradient(
-              90deg,
-              rgba(225, 240, 171, 0.3) 1px,
-              transparent 1px
-            );
-          background-size: 50px 50px;
-          pointer-events: none;
-        }
-
-        .camera-top-left,
-        .camera-top-right {
-          position: absolute;
-          top: 16px;
-          display: flex;
-          align-items: center;
-          gap: 9px;
-          padding: 7px 10px;
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          border-radius: 8px;
-          background: rgba(0, 0, 0, 0.28);
-          backdrop-filter: blur(12px);
-          color: rgba(240, 246, 220, 0.8);
-          font-size: 9px;
-          font-weight: 650;
-          letter-spacing: 0.08em;
-        }
-
-        .camera-top-left {
-          left: 16px;
-        }
-
-        .camera-top-right {
-          right: 16px;
-        }
-
-        .rec-dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #b9d957;
-          box-shadow: 0 0 0 4px rgba(185, 217, 87, 0.12);
-        }
-
-        .camera-frame-corners {
-          position: absolute;
-          inset: 15%;
-          pointer-events: none;
-        }
-
-        .corner {
-          position: absolute;
-          width: 25px;
-          height: 25px;
-          border-color: rgba(222, 239, 165, 0.65);
-          border-style: solid;
-        }
-
-        .corner.tl {
-          top: 0;
-          left: 0;
-          border-width: 2px 0 0 2px;
-        }
-
-        .corner.tr {
-          top: 0;
-          right: 0;
-          border-width: 2px 2px 0 0;
-        }
-
-        .corner.bl {
-          bottom: 0;
-          left: 0;
-          border-width: 0 0 2px 2px;
-        }
-
-        .corner.br {
-          right: 0;
-          bottom: 0;
-          border-width: 0 2px 2px 0;
-        }
-
-        .hand-guide {
-          position: absolute;
-          left: 50%;
-          top: 50%;
-          transform: translate(-50%, -50%);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 9px;
-          color: rgba(233, 241, 209, 0.68);
-          pointer-events: none;
-        }
-
-        .guide-circle {
-          width: 82px;
-          height: 82px;
-          display: grid;
-          place-items: center;
-          border: 1px dashed rgba(218, 235, 161, 0.4);
-          border-radius: 50%;
-          color: rgba(218, 235, 161, 0.7);
-        }
-
-        .hand-guide span {
-          padding: 5px 8px;
-          border-radius: 6px;
-          background: rgba(0, 0, 0, 0.3);
-          font-size: 9px;
-        }
-
-        .detection-badge {
-          position: absolute;
-          left: 50%;
-          bottom: 18px;
-          transform: translateX(-50%);
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 8px 11px;
-          border: 1px solid rgba(203, 229, 117, 0.2);
-          border-radius: 9px;
-          background: rgba(103, 130, 33, 0.68);
-          backdrop-filter: blur(10px);
-          color: #f2f8d6;
-          font-size: 10px;
-          font-weight: 600;
-        }
-
-        .camera-toolbar {
-          min-height: 56px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          gap: 10px;
-          padding-top: 12px;
-        }
-
-        .camera-controls {
-          display: flex;
-          gap: 5px;
-        }
-
-        .camera-control {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 8px 9px;
-          border-radius: 8px;
-          background: transparent;
-          color: #727b60;
-          cursor: pointer;
-          font-size: 10px;
-          font-weight: 550;
-        }
-
-        .camera-control:hover {
-          background: rgba(255, 255, 255, 0.48);
-          color: #30391f;
-        }
-
-        .small-start {
-          height: 36px;
-          min-width: 78px;
-          padding: 0 12px;
-        }
-
-        .stop-camera {
-          height: 36px;
-          display: inline-flex;
-          align-items: center;
-          gap: 7px;
-          padding: 0 12px;
-          border-radius: 9px;
-          background: rgba(118, 48, 48, 0.08);
-          color: #9a5555;
-          cursor: pointer;
-          font-size: 10px;
-          font-weight: 600;
-        }
-
-        /* =====================================================
-           SIDE PRACTICE
-        ===================================================== */
-
-        .practice-side {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .target-card,
-        .accuracy-card {
-          border-radius: 20px;
-          padding: 20px;
-        }
-
-        .target-card {
-          flex: 1;
-        }
-
-        .target-header,
-        .accuracy-top {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-        }
-
-        .target-header span,
-        .accuracy-top span {
-          display: block;
-          color: #91997e;
-          font-size: 9px;
-          font-weight: 750;
-          letter-spacing: 0.12em;
-        }
-
-        .target-header strong {
-          display: block;
-          margin-top: 5px;
-          color: #38421f;
+          letter-spacing: -0.055em;
+          font-weight: 620;
+          color: #f8f8ff;
+        }
+
+        .intro-text {
+          max-width: 490px;
+          margin: 16px 0 0;
+          color: #8995b1;
           font-size: 14px;
-          font-weight: 650;
+          line-height: 1.7;
         }
 
-        .target-sign {
-          height: 170px;
-          position: relative;
-          display: grid;
-          place-items: center;
-          margin: 18px 0 13px;
-          overflow: hidden;
+        .target-chip {
+          min-width: 118px;
+          padding: 15px 17px;
+          border: 1px solid rgba(191, 171, 255, 0.18);
           border-radius: 16px;
-          background:
-            radial-gradient(
-              circle,
-              rgba(213, 230, 148, 0.65),
-              rgba(237, 244, 211, 0.3)
-            );
+          background: rgba(140, 108, 220, 0.09);
+          text-align: center;
         }
 
-        .target-letter {
-          position: relative;
-          z-index: 2;
-          color: #647827;
-          font-size: 76px;
-          line-height: 1;
-          font-weight: 750;
-          letter-spacing: -0.06em;
-        }
-
-        .target-ring {
-          position: absolute;
-          width: 125px;
-          height: 125px;
-          border: 1px solid rgba(130, 154, 56, 0.18);
-          border-radius: 50%;
-        }
-
-        .target-card h3 {
-          margin: 0 0 6px;
-          color: #30391f;
-          font-size: 16px;
-          font-weight: 680;
-        }
-
-        .target-card > p {
-          margin: 0;
-          color: #818a70;
-          font-size: 11px;
-          line-height: 1.6;
-        }
-
-        .target-tip {
-          display: flex;
-          align-items: flex-start;
-          gap: 8px;
-          margin: 15px 0;
-          padding: 10px;
-          border-radius: 11px;
-          background: rgba(220, 235, 169, 0.38);
-        }
-
-        .target-tip > div {
-          color: #79922e;
-        }
-
-        .target-tip span {
-          color: #78805f;
-          font-size: 10px;
-          line-height: 1.5;
-        }
-
-        .primary-action {
-          width: 100%;
-          height: 42px;
-          background: #293512;
-          color: #f4f8df;
-        }
-
-        .accuracy-card {
-          min-height: 132px;
-        }
-
-        .accuracy-top strong {
+        .target-chip span {
           display: block;
-          margin-top: 4px;
-          color: #30391f;
-          font-size: 28px;
-          line-height: 1;
-          font-weight: 720;
-          letter-spacing: -0.04em;
-        }
-
-        .accuracy-icon {
-          width: 35px;
-          height: 35px;
-          display: grid;
-          place-items: center;
-          border-radius: 10px;
-          background: rgba(220, 235, 157, 0.55);
-          color: #70872a;
-        }
-
-        .progress-track,
-        .goal-track,
-        .achievement-progress .progress-track {
-          height: 6px;
-          overflow: hidden;
-          border-radius: 20px;
-          background: rgba(125, 140, 86, 0.12);
-        }
-
-        .progress-value {
-          height: 100%;
-          border-radius: inherit;
-          background: linear-gradient(
-            90deg,
-            #9dbd3c,
-            #c3d875
-          );
-        }
-
-        .accuracy-card .progress-track {
-          margin: 17px 0 10px;
-        }
-
-        .accuracy-bottom {
-          display: flex;
-          justify-content: space-between;
-          color: #8a9278;
-          font-size: 9px;
-        }
-
-        .accuracy-bottom strong {
-          color: #65782c;
-          font-weight: 650;
-        }
-
-        /* =====================================================
-           GOAL
-        ===================================================== */
-
-        .goal-card {
-          min-height: 112px;
-          display: flex;
-          align-items: center;
-          gap: 15px;
-          margin-top: 16px;
-          padding: 19px;
-          border-radius: 18px;
-        }
-
-        .goal-icon {
-          width: 46px;
-          height: 46px;
-          display: grid;
-          place-items: center;
-          flex: 0 0 46px;
-          border-radius: 13px;
-          background: rgba(216, 232, 151, 0.62);
-          color: #6d8528;
-        }
-
-        .goal-main {
-          flex: 1;
-          min-width: 0;
-        }
-
-        .goal-title {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 20px;
-        }
-
-        .goal-title span {
-          color: #90977e;
-          font-size: 9px;
-          font-weight: 750;
+          color: #8d98b3;
+          font-size: 10px;
+          text-transform: uppercase;
           letter-spacing: 0.1em;
         }
 
-        .goal-title h3 {
-          margin: 4px 0 0;
-          color: #30391f;
-          font-size: 15px;
+        .target-chip strong {
+          display: block;
+          margin-top: 3px;
+          color: #c8baff;
+          font-size: 26px;
           font-weight: 650;
         }
 
-        .goal-title > strong {
-          color: #71862e;
-          font-size: 15px;
-          font-weight: 700;
-        }
+        /* WORKSPACE */
 
-        .goal-track {
-          margin: 9px 0 7px;
-        }
-
-        .goal-track div {
-          height: 100%;
-          border-radius: inherit;
-          background: #a9c74e;
-        }
-
-        .goal-main p {
-          margin: 0;
-          color: #8a927b;
-          font-size: 10px;
-        }
-
-        .secondary-action {
-          height: 38px;
-          display: inline-flex;
-          align-items: center;
-          gap: 7px;
-          padding: 0 12px;
-          border: 1px solid rgba(255, 255, 255, 0.78);
-          border-radius: 10px;
-          background: rgba(255, 255, 255, 0.44);
-          color: #65733f;
-          cursor: pointer;
-          font-size: 10px;
-          font-weight: 600;
-        }
-
-        .secondary-action:hover {
-          background: rgba(255, 255, 255, 0.72);
-        }
-
-        /* =====================================================
-           SECTIONS
-        ===================================================== */
-
-        .learning-section {
-          margin-top: 42px;
-        }
-
-        .section-header,
-        .alphabet-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-end;
+        .workspace {
+          display: grid;
+          grid-template-columns: minmax(300px, 0.72fr) minmax(500px, 1.45fr);
           gap: 20px;
-          margin-bottom: 16px;
         }
 
-        .section-header h2,
-        .alphabet-header h2 {
-          font-size: 24px;
+        .reference-panel,
+        .camera-panel,
+        .alphabet-section,
+        .tip {
+          border: 1px solid rgba(255, 255, 255, 0.075);
+          background: linear-gradient(
+            145deg,
+            rgba(21, 36, 70, 0.72),
+            rgba(10, 22, 48, 0.72)
+          );
+          backdrop-filter: blur(24px);
+          -webkit-backdrop-filter: blur(24px);
+          box-shadow: 0 24px 65px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.04);
         }
 
-        .view-all {
+        .reference-panel,
+        .camera-panel {
+          border-radius: 23px;
+          overflow: hidden;
+        }
+
+        .panel-header,
+        .camera-header {
+          min-height: 83px;
+          padding: 19px 21px;
           display: flex;
           align-items: center;
-          gap: 5px;
-          background: transparent;
-          color: #70812f;
+          justify-content: space-between;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+        }
+
+        .panel-header h3,
+        .camera-header h3,
+        .alphabet-heading h3 {
+          margin: 5px 0 0;
+          color: #f5f6ff;
+          font-size: 18px;
+          font-weight: 620;
+          letter-spacing: -0.025em;
+        }
+
+        .sound-button {
+          padding: 8px 11px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.055);
+          color: #b8c2d8;
+          border: 1px solid rgba(255, 255, 255, 0.07);
           cursor: pointer;
           font-size: 11px;
-          font-weight: 650;
         }
 
-        .lesson-grid {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 13px;
+        .sound-button:hover {
+          background: rgba(184, 164, 255, 0.12);
+          color: #d5cbff;
         }
 
-        .lesson-card {
-          min-width: 0;
-          padding: 17px;
-          border-radius: 17px;
-          transition:
-            transform 180ms ease,
-            box-shadow 180ms ease;
-        }
-
-        .lesson-card:hover {
-          transform: translateY(-3px);
-          box-shadow:
-            0 20px 45px rgba(75, 91, 33, 0.1),
-            inset 0 1px 0 rgba(255, 255, 255, 0.92);
-        }
-
-        .lesson-top {
-          display: flex;
-          justify-content: space-between;
-        }
-
-        .lesson-symbol {
-          width: 42px;
-          height: 42px;
+        .reference-image {
+          min-height: 430px;
           display: grid;
           place-items: center;
-          border-radius: 12px;
-          background: rgba(215, 232, 149, 0.58);
-          color: #657a29;
-          font-size: 14px;
-          font-weight: 750;
+          padding: 25px;
+          background: radial-gradient(
+            circle,
+            rgba(158, 131, 231, 0.12),
+            transparent 58%
+          );
         }
 
-        .lesson-meta {
-          display: flex;
-          gap: 7px;
-          margin-top: 15px;
+        .reference-image img {
+          width: 100%;
+          height: 380px;
+          object-fit: contain;
+          filter: drop-shadow(0 20px 35px rgba(0, 0, 0, 0.25));
         }
 
-        .lesson-meta span {
-          padding: 4px 6px;
-          border-radius: 6px;
-          background: rgba(219, 230, 184, 0.42);
-          color: #87906f;
-          font-size: 8px;
-          font-weight: 600;
+        .image-fallback {
+          display: grid;
+          place-items: center;
+          gap: 10px;
+          color: #8c98b5;
         }
 
-        .lesson-card h3 {
-          margin: 10px 0 5px;
-          color: #30391f;
-          font-size: 14px;
-          line-height: 1.3;
-          font-weight: 680;
+        .fallback-letter {
+          width: 170px;
+          height: 220px;
+          display: grid;
+          place-items: center;
+          border-radius: 30px;
+          background: linear-gradient(145deg, #bca6ff, #7659ca);
+          color: white;
+          font-size: 100px;
+          font-weight: 650;
+          box-shadow: 0 25px 50px rgba(102, 74, 180, 0.28);
         }
 
-        .lesson-card p {
-          min-height: 34px;
-          margin: 0;
-          color: #89917a;
-          font-size: 10px;
-          line-height: 1.55;
-        }
-
-        .lesson-progress {
-          margin-top: 14px;
-        }
-
-        .lesson-progress-label {
+        .reference-footer {
+          padding: 15px 20px;
           display: flex;
           justify-content: space-between;
-          margin-bottom: 5px;
-          color: #919a7e;
-          font-size: 9px;
+          border-top: 1px solid rgba(255, 255, 255, 0.055);
         }
 
-        .lesson-progress-label strong {
-          color: #74882e;
-          font-weight: 650;
-        }
-
-        .lesson-button {
-          width: 100%;
-          height: 34px;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 6px;
-          margin-top: 14px;
-          border-radius: 9px;
-          background: rgba(255, 255, 255, 0.55);
-          color: #5f6e37;
-          cursor: pointer;
+        .reference-footer span {
+          display: block;
+          color: #74819e;
           font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 0.09em;
+        }
+
+        .reference-footer strong {
+          display: block;
+          margin-top: 3px;
+          color: #d5d9e7;
+          font-size: 14px;
+        }
+
+        .next-button {
+          width: 30px;
+          height: 30px;
+          margin-top: 3px;
+          border-radius: 9px;
+          background: rgba(255, 255, 255, 0.055);
+          color: #c1b1ff;
+          cursor: pointer;
+        }
+
+        /* CAMERA */
+
+        .detection-status {
+          padding: 8px 11px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.045);
+          color: #8490ab;
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          font-size: 11px;
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          transition: 0.2s ease;
+        }
+
+        .detection-status.detected {
+          color: #b9e3ff;
+          background: rgba(85, 158, 220, 0.09);
+          border-color: rgba(102, 179, 236, 0.18);
+        }
+
+        .status-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background: #687590;
+        }
+
+        .detected .status-dot {
+          background: #7ac4ff;
+          box-shadow: 0 0 12px #7ac4ff;
+        }
+
+        .camera-stage {
+          position: relative;
+          min-height: 520px;
+          overflow: hidden;
+          background: #020817;
+        }
+
+        .camera-video {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transform: scaleX(-1);
+          background: #020817;
+        }
+
+        .camera-video.captured-preview {
+          transform: none;
+          z-index: 3;
+        }
+
+        .camera-empty {
+          position: absolute;
+          inset: 0;
+          z-index: 2;
+          display: grid;
+          place-content: center;
+          text-align: center;
+          padding: 30px;
+          background: radial-gradient(
+              circle at center,
+              rgba(75, 61, 130, 0.24),
+              transparent 45%
+            ),
+            #050d1e;
+        }
+
+        .camera-empty-title {
+          color: #eef0fa;
+          font-size: 20px;
           font-weight: 620;
         }
 
-        .lesson-button:hover {
-          background: rgba(255, 255, 255, 0.8);
+        .camera-empty p {
+          max-width: 320px;
+          margin: 9px auto 20px;
+          color: #7e8ba7;
+          font-size: 13px;
+          line-height: 1.6;
         }
 
-        /* =====================================================
-           ALPHABET
-        ===================================================== */
-
-        .alphabet-section {
-          margin-top: 16px;
-          padding: 21px;
-          border-radius: 20px;
+        .hand-frame {
+          position: absolute;
+          z-index: 2;
+          left: 50%;
+          top: 50%;
+          width: min(70%, 430px);
+          height: 72%;
+          transform: translate(-50%, -50%);
+          border: 1px dashed rgba(201, 186, 255, 0.28);
+          border-radius: 25px;
+          box-shadow: inset 0 0 60px rgba(141, 110, 215, 0.045);
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
-        .alphabet-grid {
-          display: grid;
-          grid-template-columns: repeat(12, minmax(0, 1fr));
-          gap: 7px;
+        .hand-frame.visible {
+          border-color: rgba(117, 199, 255, 0.65);
+          box-shadow: inset 0 0 50px rgba(90, 163, 230, 0.08),
+            0 0 35px rgba(89, 163, 230, 0.08);
         }
 
-        .letter-card {
-          min-width: 0;
-          aspect-ratio: 1 / 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          flex-direction: column;
-          gap: 3px;
-          border: 1px solid rgba(255, 255, 255, 0.65);
+        .camera-corner {
+          position: absolute;
+          z-index: 3;
+          width: 24px;
+          height: 24px;
+          border-color: #bca8ff;
+        }
+
+        .top-left {
+          top: 25px;
+          left: 25px;
+          border-left: 2px solid;
+          border-top: 2px solid;
+        }
+
+        .top-right {
+          top: 25px;
+          right: 25px;
+          border-right: 2px solid;
+          border-top: 2px solid;
+        }
+
+        .bottom-left {
+          bottom: 25px;
+          left: 25px;
+          border-left: 2px solid;
+          border-bottom: 2px solid;
+        }
+
+        .bottom-right {
+          bottom: 25px;
+          right: 25px;
+          border-right: 2px solid;
+          border-bottom: 2px solid;
+        }
+
+        .camera-status-overlay {
+          position: absolute;
+          z-index: 4;
+          left: 20px;
+          bottom: 20px;
+          padding: 8px 11px;
           border-radius: 10px;
-          background: rgba(255, 255, 255, 0.4);
-          color: #67734a;
-          cursor: pointer;
-          transition: all 160ms ease;
+          color: #e8ecf7;
+          background: rgba(3, 10, 23, 0.62);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          backdrop-filter: blur(12px);
+          font-size: 11px;
         }
 
-        .letter-card span {
-          font-size: 17px;
-          line-height: 1;
-          font-weight: 700;
-        }
-
-        .letter-card small {
-          color: #a0a78e;
-          font-size: 7px;
-        }
-
-        .letter-card:hover,
-        .letter-card.selected {
-          border-color: rgba(167, 193, 77, 0.5);
-          background: rgba(218, 234, 156, 0.7);
-          color: #52661e;
-          transform: translateY(-2px);
-        }
-
-        /* =====================================================
-           LOWER GRID
-        ===================================================== */
-
-        .lower-grid {
+        .countdown {
+          position: absolute;
+          z-index: 5;
+          inset: 0;
           display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 16px;
-          margin-top: 16px;
+          place-items: center;
+          color: white;
+          font-size: 110px;
+          font-weight: 650;
+          background: rgba(4, 10, 25, 0.28);
+          text-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
         }
 
-        .activity-card,
-        .achievement-card {
-          min-height: 250px;
-          padding: 21px;
-          border-radius: 20px;
+        .capture-label {
+          position: absolute;
+          z-index: 5;
+          left: 50%;
+          top: 25px;
+          transform: translateX(-50%);
+          padding: 9px 14px;
+          border-radius: 10px;
+          color: #ded5ff;
+          background: rgba(57, 38, 100, 0.78);
+          border: 1px solid rgba(189, 165, 255, 0.22);
+          font-size: 11px;
         }
 
-        .section-header.compact {
-          align-items: center;
+        .camera-controls {
+          padding: 16px 20px;
+          display: flex;
+          gap: 9px;
+          border-top: 1px solid rgba(255, 255, 255, 0.055);
         }
 
-        .activity-list {
-          margin-top: 14px;
+        .primary-button,
+        .capture-button,
+        .secondary-button {
+          min-height: 42px;
+          padding: 0 17px;
+          border-radius: 11px;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 600;
+          transition: transform 0.18s ease, opacity 0.18s ease,
+            background 0.18s ease;
         }
 
-        .activity-row {
-          min-height: 58px;
+        .primary-button,
+        .capture-button {
+          color: white;
+          background: linear-gradient(135deg, #a993f2, #7358c9);
+          box-shadow: 0 12px 25px rgba(103, 76, 181, 0.22);
+        }
+
+        .primary-button:hover,
+        .capture-button:hover {
+          transform: translateY(-1px);
+        }
+
+        .capture-button {
+          flex: 1;
+        }
+
+        .capture-button:disabled {
+          cursor: not-allowed;
+          opacity: 0.42;
+          transform: none;
+        }
+
+        .secondary-button {
+          color: #aeb8ce;
+          background: rgba(255, 255, 255, 0.055);
+          border: 1px solid rgba(255, 255, 255, 0.07);
+        }
+
+        .camera-error {
+          margin: 12px 20px 0;
+          padding: 10px 12px;
+          border-radius: 10px;
+          color: #ffb5c0;
+          background: rgba(194, 67, 86, 0.1);
+          border: 1px solid rgba(220, 86, 107, 0.14);
+          font-size: 11px;
+        }
+
+        /* RESULT OVERLAY */
+
+        .result-overlay {
+          position: absolute;
+          z-index: 6;
+          left: 50%;
+          bottom: 24px;
+          transform: translateX(-50%);
+          min-width: 260px;
+          padding: 12px 16px;
+          border-radius: 14px;
           display: flex;
           align-items: center;
-          gap: 11px;
-          border-bottom: 1px solid rgba(105, 119, 71, 0.08);
+          gap: 12px;
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+          border: 1px solid;
         }
 
-        .activity-row:last-child {
-          border-bottom: 0;
+        .result-overlay strong {
+          display: block;
+          font-size: 14px;
         }
 
-        .activity-icon {
+        .result-overlay span {
+          display: block;
+          margin-top: 2px;
+          font-size: 11px;
+          opacity: 0.85;
+        }
+
+        .result-overlay-icon {
           width: 34px;
           height: 34px;
           display: grid;
           place-items: center;
           border-radius: 10px;
-          background: rgba(218, 233, 160, 0.52);
-          color: #6d822a;
+          font-size: 18px;
+          font-weight: 700;
         }
 
-        .activity-copy {
-          flex: 1;
+        .result-overlay-correct {
+          background: rgba(20, 70, 52, 0.85);
+          border-color: rgba(85, 199, 153, 0.4);
+          color: #c0f0dc;
         }
 
-        .activity-copy strong {
+        .result-overlay-correct .result-overlay-icon {
+          background: rgba(85, 199, 153, 0.2);
+          color: #79ddb4;
+        }
+
+        .result-overlay-incorrect {
+          background: rgba(80, 30, 40, 0.85);
+          border-color: rgba(218, 102, 121, 0.4);
+          color: #ffd0d7;
+        }
+
+        .result-overlay-incorrect .result-overlay-icon {
+          background: rgba(218, 102, 121, 0.2);
+          color: #ff9eae;
+        }
+
+        /* RESULT */
+
+        .result-card {
+          margin-top: 20px;
+          padding: 17px 19px;
+          border-radius: 17px;
+          display: flex;
+          align-items: center;
+          gap: 13px;
+          border: 1px solid;
+        }
+
+        .result-icon {
+          width: 38px;
+          height: 38px;
+          flex: 0 0 38px;
+          display: grid;
+          place-items: center;
+          border-radius: 12px;
+          font-size: 18px;
+          font-weight: 700;
+        }
+
+        .result-card strong {
           display: block;
-          color: #39421f;
+          font-size: 14px;
+          font-weight: 650;
+        }
+
+        .result-card span {
+          display: block;
+          margin-top: 4px;
+          font-size: 12px;
+          line-height: 1.5;
+        }
+
+        .result-correct {
+          background: rgba(64, 164, 126, 0.09);
+          border-color: rgba(85, 199, 153, 0.17);
+          color: #c0f0dc;
+        }
+
+        .result-correct .result-icon {
+          background: rgba(85, 199, 153, 0.14);
+          color: #79ddb4;
+        }
+
+        .result-wrong {
+          background: rgba(205, 94, 112, 0.09);
+          border-color: rgba(218, 102, 121, 0.17);
+          color: #ffd0d7;
+        }
+
+        .result-wrong .result-icon {
+          background: rgba(218, 102, 121, 0.14);
+          color: #ff9eae;
+        }
+
+        .result-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 9px;
+          margin-top: 11px;
+        }
+
+        .action-button {
+          border: 1px solid rgba(255, 255, 255, 0.09);
+          background: rgba(255, 255, 255, 0.045);
+          color: #d8dff0;
+          border-radius: 11px;
+          padding: 10px 14px;
+          font-size: 11px;
+          font-weight: 650;
+          cursor: pointer;
+          transition: 0.18s ease;
+        }
+
+        .action-button:hover:not(:disabled) {
+          transform: translateY(-1px);
+          background: rgba(255, 255, 255, 0.075);
+          border-color: rgba(193, 169, 255, 0.25);
+        }
+
+        .action-button:disabled {
+          opacity: 0.45;
+          cursor: not-allowed;
+        }
+
+        .primary-action {
+          background: linear-gradient(145deg, #9f88e8, #765fc4);
+          border-color: rgba(207, 191, 255, 0.28);
+          color: white;
+        }
+
+        /* ACCURACY */
+
+        .accuracy-section {
+          margin-top: 20px;
+          padding: 22px;
+          border-radius: 21px;
+          background: rgba(255, 255, 255, 0.035);
+          border: 1px solid rgba(255, 255, 255, 0.065);
+          box-shadow: 0 18px 50px rgba(0, 0, 0, 0.12);
+        }
+
+        .accuracy-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 17px;
+        }
+
+        .accuracy-header h3 {
+          margin: 5px 0 0;
+          font-size: 20px;
+          color: #eef0f8;
+        }
+
+        .reset-stats-button {
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          background: rgba(255, 255, 255, 0.035);
+          color: #8e9ab4;
+          border-radius: 10px;
+          padding: 9px 12px;
+          font-size: 10px;
+          cursor: pointer;
+        }
+
+        .reset-stats-button:hover {
+          color: #d7def0;
+          background: rgba(255, 255, 255, 0.065);
+        }
+
+        .accuracy-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 10px;
+        }
+
+        .accuracy-card {
+          min-height: 112px;
+          padding: 16px;
+          border-radius: 15px;
+          background: rgba(255, 255, 255, 0.035);
+          border: 1px solid rgba(255, 255, 255, 0.055);
+        }
+
+        .accuracy-card.featured {
+          background: linear-gradient(
+            145deg,
+            rgba(160, 133, 231, 0.16),
+            rgba(111, 85, 183, 0.07)
+          );
+          border-color: rgba(193, 169, 255, 0.2);
+        }
+
+        .accuracy-card span,
+        .accuracy-card small {
+          display: block;
+          color: #8490a9;
+          font-size: 10px;
+        }
+
+        .accuracy-card strong {
+          display: block;
+          margin: 8px 0 3px;
+          color: #f4f5fb;
+          font-size: 28px;
+          line-height: 1;
+        }
+
+        .accuracy-card.featured strong {
+          color: #cfc0ff;
+        }
+
+        .letter-navigation {
+          min-width: 170px;
+        }
+
+        .letter-nav-buttons {
+          display: flex;
+          gap: 6px;
+          margin-top: 6px;
+        }
+
+        .letter-nav-buttons .next-button {
+          min-width: 56px;
+          padding: 7px 9px;
+          font-size: 10px;
+        }
+
+        /* ALPHABET */
+
+        .alphabet-section {
+          margin-top: 20px;
+          padding: 22px;
+          border-radius: 21px;
+        }
+
+        .alphabet-heading {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-bottom: 18px;
+        }
+
+        .alphabet-count {
+          color: #78849e;
+          font-size: 11px;
+        }
+
+        .alphabet-grid {
+          display: grid;
+          grid-template-columns: repeat(13, minmax(45px, 1fr));
+          gap: 8px;
+        }
+
+        .letter-card {
+          min-height: 90px;
+          padding: 7px 5px;
+          border-radius: 12px;
+          background: rgba(255, 255, 255, 0.035);
+          border: 1px solid rgba(255, 255, 255, 0.045);
+          cursor: pointer;
+          color: #aab4c9;
+          transition: transform 0.18s ease, border-color 0.18s ease,
+            background 0.18s ease;
+        }
+
+        .letter-card:hover {
+          transform: translateY(-2px);
+          background: rgba(255, 255, 255, 0.065);
+          border-color: rgba(187, 166, 250, 0.22);
+        }
+
+        .letter-card.selected {
+          background: linear-gradient(
+            145deg,
+            rgba(160, 133, 231, 0.19),
+            rgba(111, 85, 183, 0.1)
+          );
+          border-color: rgba(193, 169, 255, 0.38);
+          color: #d8cdff;
+        }
+
+        .letter-card img {
+          width: 46px;
+          height: 60px;
+          object-fit: contain;
+          display: block;
+          margin: 0 auto 3px;
+          filter: brightness(0) invert(1) opacity(0.78);
+        }
+
+        .letter-card.selected img {
+          filter: brightness(0) invert(82%) sepia(18%) saturate(800%)
+            hue-rotate(210deg) brightness(115%);
+        }
+
+        .letter-card span {
+          display: block;
           font-size: 11px;
           font-weight: 650;
         }
 
-        .activity-copy span {
+        /* TIP */
+
+        .tip {
+          margin-top: 20px;
+          padding: 18px 20px;
+          border-radius: 16px;
+          display: flex;
+          gap: 14px;
+        }
+
+        .tip-line {
+          width: 3px;
+          border-radius: 10px;
+          background: #a991ed;
+        }
+
+        .tip strong {
           display: block;
-          margin-top: 3px;
-          color: #949b86;
-          font-size: 9px;
+          font-size: 12px;
+          color: #d3c8f3;
         }
 
-        .activity-row time {
-          color: #a0a68f;
-          font-size: 9px;
-        }
-
-        .achievement-card {
-          position: relative;
-          overflow: hidden;
-          background:
-            radial-gradient(
-              circle at 85% 15%,
-              rgba(190, 216, 104, 0.3),
-              transparent 32%
-            ),
-            linear-gradient(
-              145deg,
-              rgba(255, 255, 255, 0.7),
-              rgba(232, 242, 193, 0.45)
-            );
-        }
-
-        .achievement-icon {
-          width: 48px;
-          height: 48px;
-          display: grid;
-          place-items: center;
-          margin-bottom: 17px;
-          border-radius: 14px;
-          background: #293512;
-          color: #dceba3;
-        }
-
-        .achievement-card h2 {
-          margin-top: 7px;
-          font-size: 21px;
-        }
-
-        .achievement-card p {
-          max-width: 380px;
-          margin: 7px 0 20px;
-          color: #858e74;
+        .tip p {
+          margin: 5px 0 0;
+          color: #7d89a5;
           font-size: 11px;
           line-height: 1.6;
         }
 
-        .achievement-label {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 6px;
-          color: #828b6e;
-          font-size: 10px;
-        }
-
-        .achievement-label strong {
-          color: #70852a;
-        }
-
-        .achievement-card .secondary-action {
-          margin-top: 18px;
-        }
-
-        /* =====================================================
-           FOOTER
-        ===================================================== */
-
-        .dashboard-footer {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 20px;
-          margin-top: 35px;
-          padding: 18px 4px;
-          border-top: 1px solid rgba(105, 118, 73, 0.1);
-          color: #929a82;
-          font-size: 9px;
-        }
-
-        .footer-brand {
-          color: #6e7b4e;
-          font-weight: 650;
-        }
-
-        /* =====================================================
-           MOBILE
-        ===================================================== */
-
-        .mobile-overlay {
-          display: none;
-        }
+        /* RESPONSIVE */
 
         @media (max-width: 1180px) {
           .sidebar {
-            width: 220px;
+            width: 200px;
           }
 
-          .main-area {
-            width: calc(100% - 248px);
-            margin-left: 248px;
+          .main {
+            width: calc(100% - 225px);
+            margin-left: 225px;
           }
 
-          .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
+          .content {
+            width: calc(100% - 45px);
           }
 
-          .lesson-grid {
-            grid-template-columns: repeat(2, 1fr);
+          .workspace {
+            grid-template-columns: 1fr;
+          }
+
+          .reference-image {
+            min-height: 350px;
+          }
+
+          .reference-image img {
+            height: 300px;
+          }
+
+          .alphabet-grid {
+            grid-template-columns: repeat(13, minmax(38px, 1fr));
+          }
+        }
+
+        @media (max-width: 800px) {
+          .sidebar {
+            position: static;
+            width: 100%;
+            height: auto;
+            margin: 12px;
+            display: none;
+          }
+
+          .main {
+            width: 100%;
+            margin-left: 0;
+          }
+
+          .topbar {
+            padding: 22px;
+          }
+
+          .content {
+            width: calc(100% - 28px);
+            padding-top: 30px;
+          }
+
+          .intro {
+            align-items: flex-start;
+            flex-direction: column;
+          }
+
+          .intro h2 {
+            font-size: 38px;
+          }
+
+          .target-chip {
+            align-self: flex-start;
+          }
+
+          .camera-stage {
+            min-height: 430px;
           }
 
           .alphabet-grid {
             grid-template-columns: repeat(6, 1fr);
           }
-        }
 
-        @media (max-width: 900px) {
-          .sidebar {
-            transform: translateX(-115%);
-            transition: transform 220ms ease;
-          }
-
-          .sidebar.sidebar-open {
-            transform: translateX(0);
-          }
-
-          .mobile-overlay {
-            display: block;
-            position: fixed;
-            inset: 0;
-            z-index: 40;
-            border: 0;
-            background: rgba(29, 34, 16, 0.18);
-            backdrop-filter: blur(3px);
-          }
-
-          .main-area {
-            width: 100%;
-            margin-left: 0;
-          }
-
-          .mobile-menu-wrap {
-            display: block;
-          }
-
-          .topbar {
-            gap: 10px;
-          }
-
-          .breadcrumb {
-            flex: 1;
-          }
-
-          .search-box {
-            display: none;
-          }
-
-          .practice-layout {
-            grid-template-columns: 1fr;
-          }
-
-          .practice-side {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-          }
-
-          .hero-section {
-            align-items: flex-start;
-            flex-direction: column;
+          .accuracy-grid {
+            grid-template-columns: repeat(2, 1fr);
           }
         }
 
-        @media (max-width: 640px) {
-          .topbar {
-            margin: 10px 10px 0;
-            height: 62px;
-            padding: 0 11px;
-            border-radius: 16px;
-          }
-
-          .top-avatar {
-            width: 32px;
-            height: 32px;
-          }
-
-          .content {
-            padding: 24px 12px 40px;
-          }
-
-          .hero-section {
-            padding: 10px 4px 25px;
-          }
-
-          .hero-section h1 {
-            font-size: 38px;
-          }
-
-          .hero-section p {
-            font-size: 13px;
-          }
-
-          .hero-practice-button {
-            width: 100%;
-          }
-
-          .stats-grid {
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-          }
-
-          .stat-card {
-            min-height: 105px;
-            padding: 14px;
-          }
-
-          .stat-icon {
-            width: 31px;
-            height: 31px;
-            flex-basis: 31px;
-          }
-
-          .stat-content strong {
+        @media (max-width: 520px) {
+          .topbar h1 {
             font-size: 20px;
           }
 
-          .stat-content span {
-            font-size: 9px;
-          }
-
-          .stat-content small {
-            font-size: 8px;
-          }
-
-          .camera-card {
-            padding: 13px;
-          }
-
-          .camera-stage {
-            min-height: 360px;
-          }
-
-          .camera-video {
-            min-height: 360px;
-          }
-
-          .panel-heading {
-            flex-direction: column;
-          }
-
-          .vision-status {
-            align-self: flex-start;
-          }
-
-          .camera-controls {
-            flex-wrap: wrap;
-          }
-
-          .camera-control span {
+          .session-pill {
             display: none;
           }
 
-          .practice-side {
-            grid-template-columns: 1fr;
+          .intro h2 {
+            font-size: 34px;
           }
 
-          .goal-card {
+          .panel-header,
+          .camera-header {
+            padding: 16px;
+          }
+
+          .camera-header {
             align-items: flex-start;
-            flex-wrap: wrap;
-          }
-
-          .goal-main {
-            min-width: calc(100% - 65px);
-          }
-
-          .goal-card .secondary-action {
-            width: 100%;
-          }
-
-          .lesson-grid {
-            grid-template-columns: 1fr;
-          }
-
-          .alphabet-header,
-          .section-header {
-            align-items: flex-start;
+            gap: 10px;
             flex-direction: column;
+          }
+
+          .camera-stage {
+            min-height: 390px;
+          }
+
+          .reference-image {
+            min-height: 300px;
+          }
+
+          .reference-image img {
+            height: 270px;
+          }
+
+          .alphabet-section {
+            padding: 16px;
+          }
+
+          .accuracy-section {
+            padding: 16px;
+          }
+
+          .accuracy-header {
+            align-items: flex-start;
+          }
+
+          .accuracy-grid {
+            grid-template-columns: 1fr 1fr;
           }
 
           .alphabet-grid {
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
           }
 
-          .lower-grid {
-            grid-template-columns: 1fr;
+          .letter-card {
+            min-height: 84px;
           }
 
-          .dashboard-footer {
-            flex-direction: column;
-            align-items: flex-start;
+          .letter-card img {
+            width: 40px;
+            height: 53px;
           }
         }
       `}</style>
-
-      <main className="dashboard-page">
-        <div className="ambient ambient-one" />
-        <div className="ambient ambient-two" />
-        <div className="ambient ambient-three" />
-        <div className="ambient ambient-four" />
-
-        {/* =====================================================
-            SIDEBAR
-        ===================================================== */}
-
-        <aside
-          className={`sidebar ${
-            mobileMenu ? "sidebar-open" : ""
-          }`}
-        >
-          <div className="sidebar-brand">
-            <div className="brand-logo">S</div>
-
-            <div>
-              <strong>SignLearnAI</strong>
-              <span>AI learning studio</span>
-            </div>
-          </div>
-
-          <div className="profile-mini">
-            <div className="profile-avatar">A</div>
-
-            <div className="profile-info">
-              <strong>Welcome back</strong>
-              <span>Keep learning today</span>
-            </div>
-
-            <button
-              className="icon-button small"
-              aria-label="More options"
-            >
-              <Icon name="more" size={17} />
-            </button>
-          </div>
-
-          <nav className="sidebar-nav">
-            <span className="nav-label">
-              Workspace
-            </span>
-
-            {navigation.map((item) => (
-              <button
-                key={item.label}
-                className={`nav-item ${
-                  activeNav === item.label
-                    ? "active"
-                    : ""
-                }`}
-                onClick={() => {
-                  setActiveNav(item.label);
-
-                  if (item.label === "Practice") {
-                    scrollToPractice();
-                  }
-
-                  setMobileMenu(false);
-                }}
-              >
-                <Icon
-                  name={item.icon}
-                  size={18}
-                />
-
-                <span>{item.label}</span>
-
-                {item.label === "Practice" && (
-                  <span className="nav-live">
-                    LIVE
-                  </span>
-                )}
-              </button>
-            ))}
-
-            <span className="nav-label nav-label-gap">
-              Your learning
-            </span>
-
-            <button className="nav-item">
-              <Icon name="trophy" size={18} />
-              <span>Achievements</span>
-            </button>
-
-            <button className="nav-item">
-              <Icon name="bookmark" size={18} />
-              <span>Saved signs</span>
-            </button>
-
-            <button className="nav-item">
-              <Icon name="activity" size={18} />
-              <span>Activity</span>
-            </button>
-          </nav>
-
-          <div className="sidebar-bottom">
-            <div className="privacy-card">
-              <div className="privacy-icon">
-                <Icon name="shield" size={17} />
-              </div>
-
-              <div>
-                <strong>Camera privacy</strong>
-                <span>
-                  Video stays on your device
-                </span>
-              </div>
-            </div>
-
-            <button className="nav-item">
-              <Icon name="settings" size={18} />
-              <span>Settings</span>
-            </button>
-
-            <button
-              className="nav-item"
-              onClick={() => {
-                stopCamera();
-                window.location.href = "/login";
-              }}
-            >
-              <Icon name="logout" size={18} />
-              <span>Sign out</span>
-            </button>
-          </div>
-        </aside>
-
-        {mobileMenu && (
-          <button
-            className="mobile-overlay"
-            aria-label="Close menu"
-            onClick={() => setMobileMenu(false)}
-          />
-        )}
-
-        {/* =====================================================
-            MAIN AREA
-        ===================================================== */}
-
-        <section className="main-area">
-          <header className="topbar">
-            <div className="mobile-menu-wrap">
-              <button
-                className="icon-button mobile-menu"
-                onClick={() =>
-                  setMobileMenu(!mobileMenu)
-                }
-                aria-label="Open menu"
-              >
-                <Icon name="menu" size={20} />
-              </button>
-            </div>
-
-            <div className="breadcrumb">
-              <span>Workspace</span>
-
-              <Icon name="chevron" size={13} />
-
-              <strong>Dashboard</strong>
-            </div>
-
-            <div className="topbar-actions">
-              <div className="search-box">
-                <Icon name="search" size={16} />
-
-                <input
-                  placeholder="Search signs, lessons..."
-                  aria-label="Search"
-                />
-
-                <kbd>/</kbd>
-              </div>
-
-              <button
-                className="icon-button"
-                aria-label="Notifications"
-              >
-                <Icon name="bell" size={18} />
-                <span className="notification-dot" />
-              </button>
-
-              <div className="top-avatar">A</div>
-            </div>
-          </header>
-
-          <div className="content">
-            {/* =================================================
-                HERO
-            ================================================= */}
-
-            <section className="hero-section">
-              <div>
-                <div className="eyebrow">
-                  <span className="eyebrow-dot" />
-                  YOUR LEARNING SPACE
-                </div>
-
-                <h1>
-                  Learn.
-                  <span> Practice.</span>
-                  <br />
-                  Sign.
-                </h1>
-
-                <p>
-                  Build real sign-language confidence
-                  with guided lessons and AI-powered
-                  camera practice.
-                </p>
-              </div>
-
-              <button
-                className="hero-practice-button"
-                onClick={scrollToPractice}
-              >
-                <Icon name="camera" size={17} />
-                Start practice
-                <Icon name="arrow" size={16} />
-              </button>
-            </section>
-
-            {/* =================================================
-                STATS
-            ================================================= */}
-
-            <section className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <Icon name="flame" size={19} />
-                </div>
-
-                <div className="stat-content">
-                  <span>Current streak</span>
-                  <strong>7 days</strong>
-                  <small>Keep it going</small>
-                </div>
-
-                <div className="stat-decoration">
-                  07
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <Icon name="target" size={19} />
-                </div>
-
-                <div className="stat-content">
-                  <span>Weekly accuracy</span>
-                  <strong>86%</strong>
-                  <small className="positive">
-                    +8.4% this week
-                  </small>
-                </div>
-
-                <div className="mini-chart">
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <Icon name="clock" size={19} />
-                </div>
-
-                <div className="stat-content">
-                  <span>Practice time</span>
-                  <strong>4h 32m</strong>
-                  <small>This month</small>
-                </div>
-
-                <div className="stat-decoration">
-                  4.5
-                </div>
-              </div>
-
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <Icon name="zap" size={19} />
-                </div>
-
-                <div className="stat-content">
-                  <span>Total XP</span>
-                  <strong>2,480</strong>
-                  <small>Level 8 learner</small>
-                </div>
-
-                <div className="stat-decoration">
-                  XP
-                </div>
-              </div>
-            </section>
-
-            {/* =================================================
-                PRACTICE
-            ================================================= */}
-
-            <section
-              id="practice"
-              className="practice-layout"
-            >
-              <div className="camera-card glass-panel">
-                <div className="panel-heading">
-                  <div>
-                    <div className="section-kicker">
-                      <span className="live-indicator" />
-                      AI PRACTICE STUDIO
-                    </div>
-
-                    <h2>
-                      Practice with your camera
-                    </h2>
-
-                    <p>
-                      Show the target sign naturally
-                      in front of your webcam.
-                    </p>
-                  </div>
-
-                  <div className="vision-status">
-                    <span
-                      className={
-                        opencvStatus ===
-                        "OpenCV ready"
-                          ? "status-online"
-                          : ""
-                      }
-                    />
-
-                    {opencvStatus}
-                  </div>
-                </div>
-
-                <div
-                  id="camera-stage"
-                  className={`camera-stage ${
-                    cameraActive
-                      ? "camera-running"
-                      : ""
-                  } ${
-                    fullscreen
-                      ? "camera-fullscreen"
-                      : ""
-                  }`}
-                >
-                  <video
-                    ref={videoRef}
-                    className={`camera-video ${
-                      mirror ? "mirrored" : ""
-                    }`}
-                    playsInline
-                    muted
-                  />
-
-                  <canvas
-                    ref={processingCanvasRef}
-                    className="processing-canvas"
-                  />
-
-                  {!cameraActive && (
-                    <div className="camera-placeholder">
-                      <div className="camera-orb">
-                        <Icon
-                          name="camera"
-                          size={30}
-                        />
-                      </div>
-
-                      <h3>Camera practice</h3>
-
-                      <p>
-                        Start your webcam to practice
-                        signs with live vision
-                        feedback.
-                      </p>
-
-                      <button
-                        className="start-camera"
-                        onClick={startCamera}
-                      >
-                        <Icon
-                          name="camera"
-                          size={17}
-                        />
-                        Enable camera
-                      </button>
-
-                      {cameraError && (
-                        <div className="camera-error">
-                          {cameraError}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {cameraActive && (
-                    <>
-                      <div className="camera-grid" />
-
-                      <div className="camera-top-left">
-                        <span className="rec-dot" />
-                        LIVE
-                      </div>
-
-                      <div className="camera-top-right">
-                        <span>
-                          {visionFPS || 24} FPS
-                        </span>
-
-                        <span>
-                          {formatTime(
-                            sessionSeconds
-                          )}
-                        </span>
-                      </div>
-
-                      <div className="camera-frame-corners">
-                        <span className="corner tl" />
-                        <span className="corner tr" />
-                        <span className="corner bl" />
-                        <span className="corner br" />
-                      </div>
-
-                      <div className="hand-guide">
-                        <div className="guide-circle">
-                          <Icon
-                            name="hand"
-                            size={37}
-                          />
-                        </div>
-
-                        <span>
-                          Place your hand inside
-                          the frame
-                        </span>
-                      </div>
-
-                      {detected && (
-                        <div className="detection-badge">
-                          <Icon
-                            name="check"
-                            size={14}
-                          />
-                          Practice frame captured
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-
-                <div className="camera-toolbar">
-                  <div className="camera-controls">
-                    <button
-                      className="camera-control"
-                      onClick={() =>
-                        setMirror(!mirror)
-                      }
-                      title="Mirror camera"
-                    >
-                      <Icon
-                        name="mirror"
-                        size={17}
-                      />
-
-                      <span>Mirror</span>
-                    </button>
-
-                    <button
-                      className="camera-control"
-                      onClick={toggleFullscreen}
-                      title="Fullscreen"
-                    >
-                      <Icon
-                        name="maximize"
-                        size={17}
-                      />
-
-                      <span>Fullscreen</span>
-                    </button>
-
-                    <button
-                      className="camera-control"
-                      onClick={() => {
-                        setDetected(false);
-                        setPracticeScore(0);
-                      }}
-                    >
-                      <Icon
-                        name="refresh"
-                        size={17}
-                      />
-
-                      <span>Reset</span>
-                    </button>
-                  </div>
-
-                  {cameraActive ? (
-                    <button
-                      className="stop-camera"
-                      onClick={stopCamera}
-                    >
-                      <Icon
-                        name="stop"
-                        size={16}
-                      />
-                      Stop camera
-                    </button>
-                  ) : (
-                    <button
-                      className="start-camera small-start"
-                      onClick={startCamera}
-                    >
-                      <Icon
-                        name="play"
-                        size={15}
-                      />
-                      Start
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* TARGET */}
-
-              <aside className="practice-side">
-                <div className="target-card glass-panel">
-                  <div className="target-header">
-                    <div>
-                      <span>TARGET SIGN</span>
-                      <strong>Alphabet</strong>
-                    </div>
-
-                    <button
-                      className="icon-button small"
-                      onClick={changeSign}
-                      aria-label="Next sign"
-                    >
-                      <Icon
-                        name="refresh"
-                        size={16}
-                      />
-                    </button>
-                  </div>
-
-                  <div className="target-sign">
-                    <div className="target-letter">
-                      {targetSign}
-                    </div>
-
-                    <div className="target-ring" />
-                  </div>
-
-                  <h3>
-                    Sign "{targetSign}"
-                  </h3>
-
-                  <p>
-                    Hold the correct handshape
-                    clearly in front of the camera.
-                  </p>
-
-                  <div className="target-tip">
-                    <div>
-                      <Icon
-                        name="spark"
-                        size={15}
-                      />
-                    </div>
-
-                    <span>
-                      Tip: Keep your palm visible
-                      and avoid covering your
-                      fingers.
-                    </span>
-                  </div>
-
-                  <button
-                    className="primary-action"
-                    onClick={handlePractice}
-                  >
-                    <Icon
-                      name={
-                        cameraActive
-                          ? "playCircle"
-                          : "camera"
-                      }
-                      size={17}
-                    />
-
-                    {cameraActive
-                      ? "Check my sign"
-                      : "Start practice"}
-                  </button>
-                </div>
-
-                <div className="accuracy-card glass-panel">
-                  <div className="accuracy-top">
-                    <div>
-                      <span>SESSION SCORE</span>
-
-                      <strong>
-                        {practiceScore}%
-                      </strong>
-                    </div>
-
-                    <div className="accuracy-icon">
-                      <Icon
-                        name="target"
-                        size={18}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="progress-track">
-                    <div
-                      className="progress-value"
-                      style={{
-                        width: `${practiceScore}%`,
-                      }}
-                    />
-                  </div>
-
-                  <div className="accuracy-bottom">
-                    <span>Hand position</span>
-                    <strong>
-                      {detected
-                        ? "Detected"
-                        : "Waiting"}
-                    </strong>
-                  </div>
-                </div>
-              </aside>
-            </section>
-
-            {/* =================================================
-                DAILY GOAL
-            ================================================= */}
-
-            <section className="goal-card glass-panel">
-              <div className="goal-icon">
-                <Icon name="target" size={23} />
-              </div>
-
-              <div className="goal-main">
-                <div className="goal-title">
-                  <div>
-                    <span>TODAY'S GOAL</span>
-
-                    <h3>
-                      Practice 15 signs
-                    </h3>
-                  </div>
-
-                  <strong>9 / 15</strong>
-                </div>
-
-                <div className="goal-track">
-                  <div
-                    style={{
-                      width: "60%",
-                    }}
-                  />
-                </div>
-
-                <p>
-                  You're 60% through today's
-                  goal. Keep your streak alive.
-                </p>
-              </div>
-
-              <button
-                className="secondary-action"
-                onClick={scrollToPractice}
-              >
-                Continue
-                <Icon name="arrow" size={15} />
-              </button>
-            </section>
-
-            {/* =================================================
-                LEARNING
-            ================================================= */}
-
-            <section className="learning-section">
-              <div className="section-header">
-                <div>
-                  <span className="section-kicker">
-                    CURRICULUM
-                  </span>
-
-                  <h2>Continue learning</h2>
-
-                  <p>
-                    Pick up exactly where you
-                    left off.
-                  </p>
-                </div>
-
-                <button className="view-all">
-                  View all
-                  <Icon name="arrow" size={14} />
-                </button>
-              </div>
-
-              <div className="lesson-grid">
-                {lessons.map((lesson) => (
-                  <article
-                    key={lesson.title}
-                    className="lesson-card glass-panel"
-                  >
-                    <div className="lesson-top">
-                      <div className="lesson-symbol">
-                        {lesson.icon}
-                      </div>
-
-                      <button
-                        className="icon-button small"
-                        aria-label="Save lesson"
-                      >
-                        <Icon
-                          name="bookmark"
-                          size={15}
-                        />
-                      </button>
-                    </div>
-
-                    <div className="lesson-meta">
-                      <span>
-                        {lesson.level}
-                      </span>
-
-                      <span>
-                        {lesson.duration}
-                      </span>
-                    </div>
-
-                    <h3>{lesson.title}</h3>
-
-                    <p>
-                      {lesson.description}
-                    </p>
-
-                    <div className="lesson-progress">
-                      <div className="lesson-progress-label">
-                        <span>Progress</span>
-
-                        <strong>
-                          {lesson.progress}%
-                        </strong>
-                      </div>
-
-                      <div className="progress-track">
-                        <div
-                          className="progress-value"
-                          style={{
-                            width: `${lesson.progress}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    <button className="lesson-button">
-                      <Icon
-                        name="play"
-                        size={14}
-                      />
-                      Continue
-                    </button>
-                  </article>
-                ))}
-              </div>
-            </section>
-
-            {/* =================================================
-                ALPHABET LAB
-            ================================================= */}
-
-            <section className="alphabet-section glass-panel">
-              <div className="alphabet-header">
-                <div>
-                  <span className="section-kicker">
-                    QUICK PRACTICE
-                  </span>
-
-                  <h2>Alphabet lab</h2>
-
-                  <p>
-                    Select a letter and practice
-                    it with your camera.
-                  </p>
-                </div>
-
-                <button className="secondary-action">
-                  Full alphabet
-                  <Icon name="arrow" size={14} />
-                </button>
-              </div>
-
-              <div className="alphabet-grid">
-                {alphabet.map((letter) => (
-                  <button
-                    key={letter}
-                    className={`letter-card ${
-                      targetSign === letter
-                        ? "selected"
-                        : ""
-                    }`}
-                    onClick={() => {
-                      setTargetSign(letter);
-                      scrollToPractice();
-                    }}
-                  >
-                    <span>{letter}</span>
-                    <small>Practice</small>
-                  </button>
-                ))}
-              </div>
-            </section>
-
-            {/* =================================================
-                LOWER GRID
-            ================================================= */}
-
-            <section className="lower-grid">
-              <div className="activity-card glass-panel">
-                <div className="section-header compact">
-                  <div>
-                    <span className="section-kicker">
-                      HISTORY
-                    </span>
-
-                    <h2>Recent activity</h2>
-                  </div>
-
-                  <button
-                    className="icon-button small"
-                    aria-label="More activity"
-                  >
-                    <Icon
-                      name="more"
-                      size={16}
-                    />
-                  </button>
-                </div>
-
-                <div className="activity-list">
-                  {activities.map((activity) => (
-                    <div
-                      className="activity-row"
-                      key={activity.title}
-                    >
-                      <div className="activity-icon">
-                        <Icon
-                          name={activity.icon}
-                          size={17}
-                        />
-                      </div>
-
-                      <div className="activity-copy">
-                        <strong>
-                          {activity.title}
-                        </strong>
-
-                        <span>
-                          {activity.meta}
-                        </span>
-                      </div>
-
-                      <time>
-                        {activity.time}
-                      </time>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="achievement-card glass-panel">
-                <div className="achievement-icon">
-                  <Icon
-                    name="trophy"
-                    size={24}
-                  />
-                </div>
-
-                <span className="section-kicker">
-                  NEXT MILESTONE
-                </span>
-
-                <h2>Alphabet Explorer</h2>
-
-                <p>
-                  Learn 20 alphabet signs to
-                  unlock your next achievement.
-                </p>
-
-                <div className="achievement-progress">
-                  <div className="achievement-label">
-                    <span>17 / 20</span>
-                    <strong>85%</strong>
-                  </div>
-
-                  <div className="progress-track">
-                    <div
-                      className="progress-value"
-                      style={{
-                        width: "85%",
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <button className="secondary-action">
-                  View achievements
-                  <Icon
-                    name="arrow"
-                    size={14}
-                  />
-                </button>
-              </div>
-            </section>
-
-            <footer className="dashboard-footer">
-              <span className="footer-brand">
-                SignLearnAI
-              </span>
-
-              <span>
-                AI-powered sign language learning
-                workspace
-              </span>
-
-              <span>
-                Camera processing stays local
-              </span>
-            </footer>
-          </div>
-        </section>
-      </main>
-    </>
+    </main>
   );
 }
